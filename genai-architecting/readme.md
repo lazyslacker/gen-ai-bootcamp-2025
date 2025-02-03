@@ -2,9 +2,7 @@
 
 ### Conceptual
 
-![a high level diagram that is used to communicate to key stakeholders the business solution we are implementing
-](/images/sentence-constructor-conceptual.png" a high level diagram that is used to communicate to key stakeholders the business solution we are implementing
-").
+![](images/conceptual.png"a high level diagram that is used to communicate to key stakeholders the business solution we are implementing")
 
 ### Logical
 
@@ -58,7 +56,7 @@ GenAI vs ML
 
 ### Risks
 
-Risks are potential events or conditions that could negatively affect the success of the architecture or its implementation. 
+Risks are potential events or conditions that could negatively affect the success of the architecture or its implementation.
 
 Identifying and mitigating risks ensures smoother project delivery.
 
