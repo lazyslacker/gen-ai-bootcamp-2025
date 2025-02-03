@@ -20,15 +20,35 @@ Requirements are the specific needs or capabilities that the architecture must m
 
 #### Business Requirements
 
-Business goals and objectives
+- Customer Experience and Satisfaction
+
+    The application must provide an intuitive, responsive experience for the students
+    The application must improve the student's understanding of a foreign language (measure with various metrics, TBD)
+    The application must recieve positive feedback from the users (measure with various metrics, TBD)
 
 #### Functional Requirements
 
-Specific capabilities the system must have
+Functional requirements are specific capabilities the system must have.
+
+- User authentication and management
+
+    The application must support various processes such as user authentication/login/forgot password etc.
+
+- User interface and navigation
+
+    The application must support a browser-based interface which shall be accessible via a computer or mobile device
 
 #### Non-functional Requirements
 
-Performance, scalability, security & useability
+These are additional requirements that the system must have that are not categorized as functional requirements.
+
+- Security
+
+    Within the region that the application is deployed, the application must comply with all local laws and regulations regarding data privacy and security
+
+- Error handling and logging
+
+    The application shall log all errors with timestamps, error codes and stack traces/diagnostic traces
 
 #### Tooling
 
@@ -36,15 +56,21 @@ GenAI vs ML
 
 ### Risks
 
-Risks are potential events or conditions that could negatively affect the success of the architecture or its implementation. Identifying and mitigating risks ensures smoother project delivery.
+Risks are potential events or conditions that could negatively affect the success of the architecture or its implementation. 
+
+Identifying and mitigating risks ensures smoother project delivery.
 
 ### Assumptions
 
-Assumptions are things considered to be true without proof at the time of planning and development. These are necessary for decision-making but can introduce risks if proven false.
+Assumptions are things considered to be true without proof at the time of planning and development.
+
+These are necessary for decision-making but can introduce risks if proven false.
 
 ### Constraints
 
-Constraints are limitations or restrictions that the architecture must operate within. These are non-negotiable and must be adhered to during design and implementation.
+Constraints are limitations or restrictions that the architecture must operate within.
+
+These are non-negotiable and must be adhered to during design and implementation.
 
 ### Data Strategy
 
@@ -57,7 +83,7 @@ Develop a comprehensive data strategy that addresses:
 
 ### Model Selection and Development
 
-Choose appropriate models based on your use cases. Consider factors such as:
+Select appropriate models based on your use case. Consider factors such as:
 
 - Self Hosted vs SaaS
 - Open weight vs Open Source
@@ -111,14 +137,14 @@ Choose appropriate models based on your use cases. Consider factors such as:
 - Start by clearly defining the specific use cases for GenAI within your organization:
 - Identify the business problems you're trying to solve and the desired outcomes
 - Complexity: As a stakeholder how do I understand the level of complexity integrating GenAI (specifically) LLMs into our workload?
-eg. How many moving parts will it add to our workload?
-eg. Is this set and forget, or do we need people to monitor and maintain these components regularly?
-Key levers of cost: As a stakeholder how can I understand the key costs to running GenAI at a glance?
-eg. Size of servers
-eg. Size of models
+    eg. How many moving parts will it add to our workload?
+    eg. Is this set and forget, or do we need people to monitor and maintain these components regularly?
+    Key levers of cost: As a stakeholder how can I understand the key costs to running GenAI at a glance?
+        eg. Size of servers
+        eg. Size of models
 - Lock-in: What is a technical path we should consider so we are not locked-in to a vendor solution.
-eg. How do we avoid rug pulls? (The cost going up being locked into a solution)
-Eg. How do we position our technical stack so we can transition to better models or solutions?
+        eg. How do we avoid rug pulls? (The cost going up being locked into a solution)
+        eg. How do we position our technical stack so we can transition to better models or solutions?
 - What essential components should be conveyed as necessary when deploying a GenAI workload for production
 - Guardrails
 - Evaluations
@@ -138,10 +164,10 @@ Eg. How do we position our technical stack so we can transition to better models
 
 - Some options: Direct context injection or setting up a knowledge base?
 - Some criteria to evaluate:
-- Size of input (one document or chunks of several docs)
-- Model context window
-- One time use or repeated use of information
-- Prototyping or scalable system?
+  - Size of input (one document or chunks of several docs)
+  - Model context window
+  - One time use or repeated use of information
+  - Prototyping or scalable system?
 
 3- Guardrails:
 
