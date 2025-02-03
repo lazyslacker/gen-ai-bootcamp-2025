@@ -22,11 +22,11 @@ Requirements are the specific needs or capabilities that the architecture must m
 
 ### Categories
 
-#### Business Requirements: 
+#### Business Requirements
 
 Business goals and objectives
 
-#### Functional Requirements: 
+#### Functional Requirements
 
 Specific capabilities the system must have
 
@@ -34,18 +34,19 @@ Specific capabilities the system must have
 
 Performance, scalability, security & useability
 
-#### Tooling: 
+#### Tooling
 
 GenAI vs ML
 
-### Risks 
+### Risks
+
 are potential events or conditions that could negatively affect the success of the architecture or its implementation. Identifying and mitigating risks ensures smoother project delivery.
 
-### Assumptions 
+### Assumptions
 
 are things considered to be true without proof at the time of planning and development. These are necessary for decision-making but can introduce risks if proven false.
 
-### Constraints 
+### Constraints
 
 are limitations or restrictions that the architecture must operate within. These are non-negotiable and must be adhered to during design and implementation.
 
@@ -130,6 +131,7 @@ Eg. How do we position our technical stack so we can transition to better models
 ### LLM specific thoughts
 
 1- Choosing a Model:
+
 - input-output modalities
 - open source vs proprietary
 - SaaS or self hosted
@@ -137,6 +139,7 @@ Eg. How do we position our technical stack so we can transition to better models
 - cost
 
 2- Enhance Context:
+
 - Some options: Direct context injection or setting up a knowledge base?
 - Some criteria to evaluate:
 - Size of input (one document or chunks of several docs)
@@ -145,15 +148,18 @@ Eg. How do we position our technical stack so we can transition to better models
 - Prototyping or scalable system?
 
 3- Guardrails:
+
 - Input guardrails
 - Output guardrails
 - Implementation
 
 4- Abstract Model access
+
 - Models & patterns to support
 - Modalities to support
 
 5- Caches
+
 - Caching Strategy
 - Cache levels
 - Invalidation rules
@@ -161,5 +167,6 @@ Eg. How do we position our technical stack so we can transition to better models
 - Hit rate optimization
 
 6- Agents
+
 - Actions to be executed
 - System integration
