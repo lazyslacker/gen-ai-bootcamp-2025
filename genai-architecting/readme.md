@@ -2,7 +2,9 @@
 
 ### Conceptual
 
-a high level diagram that is used to communicate to key stakeholders the business solution we are implementing
+![a high level diagram that is used to communicate to key stakeholders the business solution we are implementing
+](/images/sentence-constructor-conceptual.png" a high level diagram that is used to communicate to key stakeholders the business solution we are implementing
+").
 
 ### Logical
 
@@ -22,11 +24,9 @@ Requirements are the specific needs or capabilities that the architecture must m
 
 - Customer Experience and Satisfaction
 
-    The application must provide an intuitive, responsive experience for the students
-
-    The application must improve the student's understanding of a foreign language (measure with various metrics, TBD)
-    
-    The application must recieve positive feedback from the users (measure with various metrics, TBD)
+  - The application must provide an intuitive, responsive experience for the students
+  - The application must improve the student's understanding of a foreign language (measure with various metrics, TBD)
+  - The application must recieve positive feedback from the users (measure with various metrics, TBD)
 
 #### Functional Requirements
 
