@@ -1,7 +1,5 @@
 ## Technical Considerations
 
-Let’s assume we are following the three levels of diagramming:
-
 ### Conceptual
 
 a high level diagram that is used to communicate to key stakeholders the business solution we are implementing
@@ -16,11 +14,9 @@ a low level diagram that details all possible parameters and connections used by
 
 ## Architectural/Design Considerations
 
-### Requirements, Risks, Assumptions, & Constraints
+### Requirements
 
 Requirements are the specific needs or capabilities that the architecture must meet or support.
-
-### Categories
 
 #### Business Requirements
 
@@ -40,15 +36,15 @@ GenAI vs ML
 
 ### Risks
 
-are potential events or conditions that could negatively affect the success of the architecture or its implementation. Identifying and mitigating risks ensures smoother project delivery.
+Risks are potential events or conditions that could negatively affect the success of the architecture or its implementation. Identifying and mitigating risks ensures smoother project delivery.
 
 ### Assumptions
 
-are things considered to be true without proof at the time of planning and development. These are necessary for decision-making but can introduce risks if proven false.
+Assumptions are things considered to be true without proof at the time of planning and development. These are necessary for decision-making but can introduce risks if proven false.
 
 ### Constraints
 
-are limitations or restrictions that the architecture must operate within. These are non-negotiable and must be adhered to during design and implementation.
+Constraints are limitations or restrictions that the architecture must operate within. These are non-negotiable and must be adhered to during design and implementation.
 
 ### Data Strategy
 
