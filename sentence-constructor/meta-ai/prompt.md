@@ -155,7 +155,7 @@ Please read this file so you can see more examples to provide better output <fil
 
 ## Example 1
 
-### Example 1 Output
+### Output
 
 Considerations and Next Steps:
 
