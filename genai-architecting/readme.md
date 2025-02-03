@@ -2,7 +2,7 @@
 
 ### Conceptual
 
-![](images/conceptual.png"a high level diagram that is used to communicate to key stakeholders the business solution we are implementing")
+![](images/conceptual.png)
 
 ### Logical
 
