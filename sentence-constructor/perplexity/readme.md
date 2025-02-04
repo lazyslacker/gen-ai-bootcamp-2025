@@ -4,7 +4,13 @@
 
 Auto 
 
-Using the free tier, not sure which model was used in the background. 
+Using the free tier, with the "auto" option selected.
+
+The interface shows that the "reasoning" queries are being used up.
+
+More digging around shows that the o3-mini model is being used.
+
+Switching to "Deepseek-R1" model with the same prompt results in the assistant selecting a random english sentence as user input in the "Setup" state, which is not desirable, so the prompt will need to be adjusted for this model. 
 
 ## Prompting Guides
 
