@@ -1,10 +1,11 @@
-## Setting up the database
+# Setting up the database
 
 ```sh
 invoke init-db
 ```
 
 This will do the following:
+
 - create the words.db (Sqlite3 database)
 - run the migrations found in `seeds/`
 - run the seed data found in `seed/`
