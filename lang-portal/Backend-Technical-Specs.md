@@ -1,8 +1,9 @@
-# Backend Server Technical Sepcs
+# Backend Server Technical Specs
 
-## Business Goal:
+## Business Goal
 
 A language learning school wants to build a prototype of learning portal which will act as three things:
+
 - Inventory of possible vocabulary that can be learned
 - Act as a  Learning record store (LRS), providing correct and wrong score on practice vocabulary
 - A unified launchpad to launch different learning apps
@@ -40,6 +41,7 @@ backend_go/
 Our database will be a single sqlite database called `words.db` that will be in the root of the project folder of `backend_go`
 
 We have the following tables:
+
 - words - stored vocabulary words
   - id integer
   - japasese string
@@ -72,9 +74,11 @@ We have the following tables:
 ## API Endpoints
 
 ### GET /api/dashboard/last_study_session
+
 Returns information about the most recent study session.
 
 #### JSON Response
+
 ```json
 {
   "id": 123,
@@ -87,6 +91,7 @@ Returns information about the most recent study session.
 ```
 
 ### GET /api/dashboard/study_progress
+
 Returns study progress statistics.
 Please note that the frontend will determine progress bar basedon total words studied and total available words.
 
@@ -104,6 +109,7 @@ Please note that the frontend will determine progress bar basedon total words st
 Returns quick overview statistics.
 
 #### JSON Response
+
 ```json
 {
   "success_rate": 80.0,
@@ -116,6 +122,7 @@ Returns quick overview statistics.
 ### GET /api/study_activities/:id
 
 #### JSON Response
+
 ```json
 {
   "id": 1,
@@ -153,10 +160,12 @@ Returns quick overview statistics.
 ### POST /api/study_activities
 
 #### Request Params
+
 - group_id integer
 - study_activity_id integer
 
 #### JSON Response
+
 {
   "id": 124,
   "group_id": 123
@@ -167,6 +176,7 @@ Returns quick overview statistics.
 - pagination with 100 items per page
 
 #### JSON Response
+
 ```json
 {
   "items": [
@@ -188,7 +198,9 @@ Returns quick overview statistics.
 ```
 
 ### GET /api/words/:id
+
 #### JSON Response
+
 ```json
 {
   "japanese": "こんにちは",
@@ -208,8 +220,11 @@ Returns quick overview statistics.
 ```
 
 ### GET /api/groups
+
 - pagination with 100 items per page
+
 #### JSON Response
+
 ```json
 {
   "items": [
@@ -229,7 +244,9 @@ Returns quick overview statistics.
 ```
 
 ### GET /api/groups/:id
+
 #### JSON Response
+
 ```json
 {
   "id": 1,
@@ -241,7 +258,9 @@ Returns quick overview statistics.
 ```
 
 ### GET /api/groups/:id/words
+
 #### JSON Response
+
 ```json
 {
   "items": [
@@ -263,7 +282,9 @@ Returns quick overview statistics.
 ```
 
 ### GET /api/groups/:id/study_sessions
+
 #### JSON Response
+
 ```json
 {
   "items": [
@@ -286,8 +307,11 @@ Returns quick overview statistics.
 ```
 
 ### GET /api/study_sessions
+
 - pagination with 100 items per page
+
 #### JSON Response
+
 ```json
 {
   "items": [
@@ -310,7 +334,9 @@ Returns quick overview statistics.
 ```
 
 ### GET /api/study_sessions/:id
+
 #### JSON Response
+
 ```json
 {
   "id": 123,
@@ -323,8 +349,11 @@ Returns quick overview statistics.
 ```
 
 ### GET /api/study_sessions/:id/words
+
 - pagination with 100 items per page
+
 #### JSON Response
+
 ```json
 {
   "items": [
@@ -346,7 +375,9 @@ Returns quick overview statistics.
 ```
 
 ### POST /api/reset_history
+
 #### JSON Response
+
 ```json
 {
   "success": true,
@@ -355,7 +386,9 @@ Returns quick overview statistics.
 ```
 
 ### POST /api/full_reset
+
 #### JSON Response
+
 ```json
 {
   "success": true,
@@ -364,12 +397,15 @@ Returns quick overview statistics.
 ```
 
 ### POST /api/study_sessions/:id/words/:word_id/review
+
 #### Request Params
+
 - id (study_session_id) integer
 - word_id integer
 - correct boolean
 
 #### Request Payload
+
 ```json
 {
   "correct": true
@@ -377,6 +413,7 @@ Returns quick overview statistics.
 ```
 
 #### JSON Response
+
 ```json
 {
   "success": true,
@@ -392,9 +429,11 @@ Returns quick overview statistics.
 Lets list out possible tasks we need for our lang portal.
 
 ### Initialize Database
+
 This task will initialize the sqlite database called `words.db
 
 ### Migrate Database
+
 This task will run a series of migrations sql files on the database
 
 Migrations live in the `migrations` folder.
@@ -407,6 +446,7 @@ The file names should looks like this:
 ```
 
 ### Seed Data
+
 This task will import json files and transform them into target data for our database.
 
 All seed files live in the `seeds` folder.
