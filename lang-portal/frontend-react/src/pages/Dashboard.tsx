@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { BookOpen, Trophy, Clock, ArrowRight, Activity } from 'lucide-react'
-import { fetchRecentStudySession, fetchStudyStats, type StudyStats, type RecentSession } from '@/services/api'
+import { fetchDashboardStats, fetchRecentSession } from '@/services/api'
+import type { StudyStats, RecentSession } from '@/services/api'
 
 interface DashboardCardProps {
   title: string
@@ -23,21 +24,24 @@ function DashboardCard({ title, icon: Icon, children, className = '' }: Dashboar
 }
 
 export default function Dashboard() {
-  const [recentSession, setRecentSession] = useState<RecentSession | null>(null)
   const [stats, setStats] = useState<StudyStats | null>(null)
+  const [recentSession, setRecentSession] = useState<RecentSession | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const loadDashboardData = async () => {
       try {
-        const [sessionData, statsData] = await Promise.all([
-          fetchRecentStudySession(),
-          fetchStudyStats()
+        setIsLoading(true)
+        const [statsData, sessionData] = await Promise.all([
+          fetchDashboardStats(),
+          fetchRecentSession()
         ])
-        setRecentSession(sessionData)
         setStats(statsData)
-      } catch (error) {
-        console.error('Failed to load dashboard data:', error)
+        setRecentSession(sessionData)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load dashboard data')
+        console.error('Dashboard error:', err)
       } finally {
         setIsLoading(false)
       }
@@ -45,6 +49,14 @@ export default function Dashboard() {
 
     loadDashboardData()
   }, [])
+
+  if (isLoading) {
+    return <DashboardSkeleton />
+  }
+
+  if (error) {
+    return <DashboardError error={error} />
+  }
 
   return (
     <div className="space-y-6">
@@ -62,9 +74,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Last Study Session */}
         <DashboardCard title="Last Study Session" icon={Clock}>
-          {isLoading ? (
-            <div className="animate-pulse h-20 bg-gray-200 dark:bg-gray-700 rounded" />
-          ) : recentSession ? (
+          {recentSession ? (
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <span className="text-gray-600 dark:text-gray-300">{recentSession.activity_name}</span>
@@ -102,12 +112,7 @@ export default function Dashboard() {
 
         {/* Study Progress */}
         <DashboardCard title="Study Progress" icon={Activity}>
-          {isLoading ? (
-            <div className="animate-pulse space-y-4">
-              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
-              <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded" />
-            </div>
-          ) : stats ? (
+          {stats ? (
             <div className="space-y-4">
               {stats.total_words_studied > 0 ? (
                 <>
@@ -163,13 +168,7 @@ export default function Dashboard() {
 
         {/* Quick Stats */}
         <DashboardCard title="Quick Stats" icon={Trophy}>
-          {isLoading ? (
-            <div className="animate-pulse space-y-3">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="h-4 bg-gray-200 dark:bg-gray-700 rounded" />
-              ))}
-            </div>
-          ) : stats ? (
+          {stats ? (
             <div className="space-y-3">
               {stats.total_sessions > 0 ? (
                 <>
@@ -215,6 +214,28 @@ export default function Dashboard() {
           )}
         </DashboardCard>
       </div>
+    </div>
+  )
+}
+
+function DashboardSkeleton() {
+  return (
+    <div className="space-y-6 animate-pulse">
+      {/* Add skeleton UI here */}
+    </div>
+  )
+}
+
+function DashboardError({ error }: { error: string }) {
+  return (
+    <div className="text-center py-8">
+      <div className="text-red-500 mb-4">{error}</div>
+      <button 
+        onClick={() => window.location.reload()}
+        className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+      >
+        Retry
+      </button>
     </div>
   )
 }

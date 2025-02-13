@@ -1,94 +1,72 @@
-import { useState } from 'react'
-import { useTheme } from '@/components/theme-provider'
+import React, { useState } from 'react'
+import { API_BASE_URL } from '@/services/api'
 
 export default function Settings() {
-  const { theme, setTheme } = useTheme()
-  const [showResetDialog, setShowResetDialog] = useState(false)
-  const [resetConfirmation, setResetConfirmation] = useState('')
+  const [isResetting, setIsResetting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
 
-  const handleReset = async () => {
-    if (resetConfirmation.toLowerCase() === 'reset me') {
-      try {
-        const response = await fetch('http://localhost:5000/api/study-sessions/reset', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
+  const handleResetHistory = async () => {
+    if (!confirm('Are you sure you want to reset your study history? This cannot be undone.')) {
+      return
+    }
 
-        if (!response.ok) {
-          throw new Error('Failed to reset history');
-        }
+    setIsResetting(true)
+    setError(null)
+    setSuccess(null)
 
-        // Reset was successful
-        setShowResetDialog(false);
-        setResetConfirmation('');
-        
-        // Show success message
-        alert('Study history has been cleared successfully');
-      } catch (error) {
-        console.error('Error resetting history:', error);
-        alert('Failed to reset history. Please try again.');
+    try {
+      const response = await fetch(`${API_BASE_URL}/study-sessions/reset`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to reset study history')
       }
+
+      setSuccess('Study history has been reset successfully')
+    } catch (err) {
+      console.error('Error resetting history:', err)
+      setError('Failed to reset study history. Please try again.')
+    } finally {
+      setIsResetting(false)
     }
   }
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Settings</h1>
-      
-      <div className="flex items-center justify-between">
-        <span className="text-gray-700 dark:text-gray-300">Theme</span>
-        <select
-          value={theme}
-          onChange={(e) => setTheme(e.target.value as 'light' | 'dark' | 'system')}
-          className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-1 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="light">Light</option>
-          <option value="dark">Dark</option>
-          <option value="system">System</option>
-        </select>
-      </div>
+      <h1 className="text-2xl font-bold">Settings</h1>
 
-      <div>
-        <button
-          onClick={() => setShowResetDialog(true)}
-          className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded"
-        >
-          Reset History
-        </button>
-      </div>
-
-      {showResetDialog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg">
-            <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">Confirm Reset</h2>
-            <p className="mb-4 text-gray-600 dark:text-gray-400">
-              Type "reset me" to confirm database reset:
-            </p>
-            <input
-              type="text"
-              value={resetConfirmation}
-              onChange={(e) => setResetConfirmation(e.target.value)}
-              className="border rounded px-2 py-1 mb-4 w-full text-gray-800 dark:text-white dark:bg-gray-700"
-            />
-            <div className="flex justify-end space-x-2">
-              <button
-                onClick={() => setShowResetDialog(false)}
-                className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleReset}
-                className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded"
-              >
-                Confirm Reset
-              </button>
-            </div>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <h2 className="text-lg font-semibold mb-4">Study History</h2>
+        
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-md">
+            {error}
           </div>
-        </div>
-      )}
+        )}
+
+        {success && (
+          <div className="mb-4 p-4 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-md">
+            {success}
+          </div>
+        )}
+
+        <button
+          onClick={handleResetHistory}
+          disabled={isResetting}
+          className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isResetting ? 'Resetting...' : 'Reset Study History'}
+        </button>
+        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+          This will delete all your study sessions and progress data. This action cannot be undone.
+        </p>
+      </div>
     </div>
   )
 }
