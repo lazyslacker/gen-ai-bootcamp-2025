@@ -99,4 +99,4 @@ def create_word_review(session_id, word_id):
         pass
 ```
 
-Would you like to start with Step 1 - Understanding the Requirements? 
+Would you like to start with Step 1 - Understanding the Requirements?
