@@ -1,9 +1,10 @@
-.PHONY: setup test dev start clean reset-db seed-db
+.PHONY: setup test dev start clean reset-db seed-db init-dev-db
 
 # Setup project
 setup:
 	npm install
 	mkdir -p data
+	npm run init-dev-db
 
 # Run tests
 test:
@@ -11,11 +12,11 @@ test:
 
 # Run development server
 dev:
-	npm run dev
+	NODE_ENV=development npm run dev
 
 # Start production server
 start:
-	npm start
+	NODE_ENV=production npm start
 
 # Clean up
 clean:
@@ -24,8 +25,12 @@ clean:
 
 # Reset database
 reset-db: clean
-	node migrate.js
+	NODE_ENV=development node migrate.js
 
 # Seed database with test data
 seed-db:
-	node seed.js 
+	NODE_ENV=development node seed.js
+
+# Initialize development database
+init-dev-db:
+	NODE_ENV=development node scripts/init-dev-db.js 

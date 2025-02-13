@@ -97,9 +97,10 @@ describe('API Tests', () => {
                 .expect('Content-Type', /json/)
                 .expect(200);
 
-            expect(res.body).to.be.an('array');
-            expect(res.body[0]).to.have.property('group_name');
-            expect(res.body[0]).to.have.property('words_reviewed');
+            expect(res.body).to.have.property('total_words_studied');
+            expect(res.body).to.have.property('total_available_words');
+            expect(res.body.total_words_studied).to.be.a('number');
+            expect(res.body.total_available_words).to.be.a('number');
         });
     });
 

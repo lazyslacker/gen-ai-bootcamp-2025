@@ -4,44 +4,46 @@ const db = require('./db');
 
 async function runMigrations() {
     try {
-        // Enable foreign keys
-        await db.asyncRun('PRAGMA foreign_keys = ON');
-        console.log('Foreign keys enabled');
+        // Connect to database first
+        await db.connect();
+        
+        const migrationsDir = path.join(__dirname, 'migrations');
+        const files = await fs.readdir(migrationsDir);
+        
+        // Sort migration files to ensure order
+        const migrationFiles = files
+            .filter(f => f.endsWith('.sql'))
+            .sort();
 
-        // Get all migration files
-        const files = await fs.readdir(path.join(__dirname, 'migrations'));
-        const sqlFiles = files.filter(f => f.endsWith('.sql')).sort();
-
-        // Run each migration
-        for (const file of sqlFiles) {
-            console.log(`Running migration: ${file}`);
-            const sql = await fs.readFile(
-                path.join(__dirname, 'migrations', file),
-                'utf8'
-            );
-
+        for (const file of migrationFiles) {
+            console.log('Running migration:', file);
+            const sql = await fs.readFile(path.join(migrationsDir, file), 'utf8');
+            
+            await db.asyncRun('BEGIN TRANSACTION');
             try {
                 await db.asyncRun(sql);
-                console.log(`Completed migration: ${file}`);
+                await db.asyncRun('COMMIT');
+                console.log('Completed migration:', file);
             } catch (err) {
-                console.error(`Error in migration ${file}:`, err);
+                await db.asyncRun('ROLLBACK');
                 throw err;
             }
         }
-
-        console.log('All migrations completed successfully');
     } catch (err) {
         console.error('Error running migrations:', err);
         throw err;
+    } finally {
+        // Close database connection
+        db.close();
     }
 }
 
-module.exports = runMigrations;
-
-// Run migrations if this file is run directly
+// Run migrations if this script is executed directly
 if (require.main === module) {
     runMigrations().catch(err => {
         console.error('Migration failed:', err);
         process.exit(1);
     });
 }
+
+module.exports = runMigrations;

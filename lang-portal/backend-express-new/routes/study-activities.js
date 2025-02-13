@@ -2,6 +2,35 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 
+/**
+ * @swagger
+ * /api/study-activities:
+ *   get:
+ *     summary: Get all study activities
+ *     description: Retrieve a list of available study activities
+ *     responses:
+ *       200:
+ *         description: List of study activities
+ */
+router.get('/', async (req, res) => {
+    try {
+        const activities = await db.asyncAll(`
+            SELECT 
+                id,
+                name as title,
+                description,
+                thumbnail_url as preview_url,
+                launch_url
+            FROM study_activities
+        `);
+        
+        res.json(activities);
+    } catch (err) {
+        console.error('Error getting study activities:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // GET /api/study-activities/:id
 router.get('/:id', async (req, res) => {
     try {

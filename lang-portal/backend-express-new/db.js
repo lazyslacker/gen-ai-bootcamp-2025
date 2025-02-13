@@ -3,32 +3,27 @@ const path = require('path');
 const fs = require('fs');
 
 class Database {
-    constructor() {
+    constructor(dbPath) {
+        this.dbPath = dbPath;
         this.db = null;
     }
 
     connect() {
-        const DATA_DIR = path.join(__dirname, 'data');
-        const dbPath = process.env.NODE_ENV === 'test' 
-            ? path.join(DATA_DIR, 'test.db')
-            : path.join(DATA_DIR, 'words.db');
-
-        // Ensure data directory exists
-        if (!fs.existsSync(DATA_DIR)) {
-            fs.mkdirSync(DATA_DIR, { recursive: true });
-        }
-
         return new Promise((resolve, reject) => {
-            this.db = new sqlite3.Database(dbPath, (err) => {
+            this.db = new sqlite3.Database(this.dbPath, (err) => {
                 if (err) {
-                    console.error('Error connecting to SQLite database:', err);
+                    console.error('Error connecting to database:', err);
                     reject(err);
                 } else {
-                    console.log('Connected to SQLite database:', dbPath);
-                    // Enable foreign keys
+                    console.log('Connected to SQLite database:', this.dbPath);
+                    // Enable foreign keys after connection
                     this.db.run('PRAGMA foreign_keys = ON', (err) => {
-                        if (!err) console.log('Foreign keys enabled');
-                        resolve(this);
+                        if (err) {
+                            reject(err);
+                        } else {
+                            console.log('Foreign keys enabled');
+                            resolve();
+                        }
                     });
                 }
             });
@@ -80,13 +75,17 @@ class Database {
 }
 
 // Create database instance
-const database = new Database();
+const dbPath = process.env.NODE_ENV === 'test' 
+    ? path.join(__dirname, 'data', 'test.db')
+    : path.join(__dirname, 'data', 'development.db');
+
+const db = new Database(dbPath);
 
 // Export a wrapper object that binds all methods to the database instance
 module.exports = {
-    connect: () => database.connect(),
-    close: (...args) => database.close(...args),
-    asyncRun: (...args) => database.asyncRun(...args),
-    asyncGet: (...args) => database.asyncGet(...args),
-    asyncAll: (...args) => database.asyncAll(...args)
+    connect: () => db.connect(),
+    close: (...args) => db.close(...args),
+    asyncRun: (...args) => db.asyncRun(...args),
+    asyncGet: (...args) => db.asyncGet(...args),
+    asyncAll: (...args) => db.asyncAll(...args)
 };

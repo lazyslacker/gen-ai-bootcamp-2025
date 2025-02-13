@@ -186,18 +186,17 @@ router.post('/system/vacuum', validate(rules.vacuum), async (req, res) => {
 });
 
 // POST /api/reset_history - Clear study history but keep words and groups
-router.post('/reset_history', validate(rules.resetHistory), async (req, res) => {
+router.post('/reset_history', async (req, res) => {
     try {
         await db.asyncRun('BEGIN TRANSACTION');
-
-        // Delete all word review items
         await db.asyncRun('DELETE FROM word_review_items');
-        
-        // Delete all study sessions
         await db.asyncRun('DELETE FROM study_sessions');
-
         await db.asyncRun('COMMIT');
-        res.json({ message: 'Study history reset successfully' });
+
+        res.json({
+            success: true,
+            message: 'Study history has been reset'
+        });
     } catch (err) {
         await db.asyncRun('ROLLBACK');
         console.error('Error resetting history:', err);
@@ -206,20 +205,21 @@ router.post('/reset_history', validate(rules.resetHistory), async (req, res) => 
 });
 
 // POST /api/full_reset - Reset everything to initial state
-router.post('/full_reset', validate(rules.fullReset), async (req, res) => {
+router.post('/full_reset', async (req, res) => {
     try {
         await db.asyncRun('BEGIN TRANSACTION');
-
-        // Delete all data in reverse order of dependencies
         await db.asyncRun('DELETE FROM word_review_items');
         await db.asyncRun('DELETE FROM study_sessions');
         await db.asyncRun('DELETE FROM words_groups');
         await db.asyncRun('DELETE FROM words');
         await db.asyncRun('DELETE FROM groups');
         await db.asyncRun('DELETE FROM study_activities');
-
         await db.asyncRun('COMMIT');
-        res.json({ message: 'Database reset successfully' });
+
+        res.json({
+            success: true,
+            message: 'System has been fully reset'
+        });
     } catch (err) {
         await db.asyncRun('ROLLBACK');
         console.error('Error performing full reset:', err);
