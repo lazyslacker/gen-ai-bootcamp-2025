@@ -1,0 +1,16 @@
+{
+  "groups": [
+    {
+      "id": 1,
+      "name": "Basic Greetings"
+    },
+    {
+      "id": 2,
+      "name": "Common Phrases"
+    },
+    {
+      "id": 3,
+      "name": "Numbers 1-10"
+    }
+  ]
+} 

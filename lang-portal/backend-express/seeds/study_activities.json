@@ -1,0 +1,28 @@
+{
+  "study_activities": [
+    {
+      "id": 1,
+      "name": "Typing Tutor",
+      "description": "Practice typing Japanese words in romaji",
+      "thumbnail_url": "/images/typing.png"
+    },
+    {
+      "id": 2,
+      "name": "Flashcards",
+      "description": "Review words using flashcards",
+      "thumbnail_url": "/images/flashcards.png"
+    },
+    {
+      "id": 3,
+      "name": "Multiple Choice",
+      "description": "Test your knowledge with multiple choice questions",
+      "thumbnail_url": "/images/quiz.png"
+    },
+    {
+      "id": 4,
+      "name": "Writing Practice",
+      "description": "Practice writing Japanese characters",
+      "thumbnail_url": "/images/writing.png"
+    }
+  ]
+} 

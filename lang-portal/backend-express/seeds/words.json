@@ -1,0 +1,53 @@
+{
+  "words": [
+    {
+      "id": 1,
+      "japanese": "こんにちは",
+      "romaji": "konnichiwa",
+      "english": "hello",
+      "parts": ["greeting", "formal"]
+    },
+    {
+      "id": 2,
+      "japanese": "さようなら",
+      "romaji": "sayounara",
+      "english": "goodbye",
+      "parts": ["greeting", "formal"]
+    },
+    {
+      "id": 3,
+      "japanese": "ありがとう",
+      "romaji": "arigatou",
+      "english": "thank you",
+      "parts": ["gratitude", "common"]
+    },
+    {
+      "id": 4,
+      "japanese": "おはよう",
+      "romaji": "ohayou",
+      "english": "good morning",
+      "parts": ["greeting", "informal"]
+    },
+    {
+      "id": 5,
+      "japanese": "いち",
+      "romaji": "ichi",
+      "english": "one",
+      "parts": ["number"]
+    },
+    {
+      "id": 6,
+      "japanese": "に",
+      "romaji": "ni",
+      "english": "two",
+      "parts": ["number"]
+    },
+    {
+      "id": 7,
+      "japanese": "さん",
+      "romaji": "san",
+      "english": "three",
+      "parts": ["number"]
+    }
+  ]
+} 
