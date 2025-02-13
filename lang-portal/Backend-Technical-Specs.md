@@ -19,7 +19,7 @@ A language learning school wants to build a prototype of learning portal which w
 
 ## Database Schema
 
-Our database will be a single sqlite database called `words.db` that will be in the root of the project folder of `backend_go`
+Our database will be a single sqlite database called `words.db` that will be in the root of the project folder of `backend_flask`
 
 We have the following tables:
 

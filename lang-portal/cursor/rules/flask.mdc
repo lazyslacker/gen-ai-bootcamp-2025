@@ -1,0 +1,72 @@
+---
+description: Rules for flask code
+globs: /backend-flask
+---
+## 0. Hello message
+
+Always say Hi GenAI bootcamp before starting
+
+## 1. Use Application Factory Pattern
+
+```python
+# ✅ GOOD - Application factory
+from flask import Flask
+
+def create_app(config=None):
+    app = Flask(__name__)
+    
+    if config:
+        app.config.from_object(config)
+    
+    # Register blueprints
+    from .routes import main_bp
+    app.register_blueprint(main_bp)
+    
+    return app
+```
+
+## 2. Use Blueprints for Route Organization
+
+```python
+# ✅ GOOD - Routes organized in blueprints
+from flask import Blueprint
+
+users_bp = Blueprint('users', __name__)
+
+@users_bp.route('/users')
+def get_users():
+    pass
+
+@users_bp.route('/users/<id>')
+def get_user(id):
+    pass
+
+# In your app factory:
+app.register_blueprint(users_bp)
+```
+
+## 3. Handle Errors Properly
+
+```python
+# ✅ GOOD - Proper error handling
+from flask import jsonify
+
+@app.errorhandler(404)
+def not_found_error(error):
+    return jsonify({'error': 'Resource not found'}), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/user/<id>')
+def get_user(id):
+    try:
+        user = find_user(id)
+        if not user:
+            abort(404)  # Will be caught by error handler
+        return jsonify(user), 200
+    except Exception as e:
+        app.logger.error(f'Error getting user: {str(e)}')
+        abort(500)
+```

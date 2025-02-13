@@ -1,12 +1,15 @@
-# Role/Profession
+#
+
+## Role/Profession
 
 Frontend Developer
 
-# Project Description
+## Project Description
 
 ## Project Brief
 
 We are building a japanese langauge learning web-app which serves the following purposes:
+
 - A portal to launch study activities
 - to store, group and explore japanese vocabulary
 - to review study progress
@@ -41,9 +44,10 @@ The default route / should forward to /dashboard
 
 ## Global Components
 
-### Navigation 
+### Navigation
 
 There will be a horizontal navigation bar with the following links:
+
 - Dashboard
 - Study Activities
 - Words
@@ -77,6 +81,7 @@ The route for this page /study-activties
 This is a grade of cards which reresent and activity.
 
 A card has a:
+
 - thumbnail
 - title
 - "Launch" button
@@ -98,24 +103,27 @@ The View button will go to the Student Activities Show Page.
 The route for this page /study-activties/:id
 
 This page will have a information section which will contain:
+
 - thumbnail
 - title
 - description
 - launch button
 
 There will be a list of sessions for this study activity
-  - a session item will contain
-    - Group Name: So you know what group name was used for the sessions
-      - This will be a link to the Group Show Page
-    - Start Time: When the session was created in YYY-MM-DD HH:MM format (12 hours)
-    - End Time: When the last word_review_item was created
-    - \# Review Items:  The number of reviews imtes
+
+- a session item will contain
+  - Group Name: So you know what group name was used for the sessions
+    - This will be a link to the Group Show Page
+  - Start Time: When the session was created in YYY-MM-DD HH:MM format (12 hours)
+  - End Time: When the last word_review_item was created
+  - \# Review Items:  The number of reviews imtes
 
 ## Words Index
 
 The route for this page /words
 
 This is table of words with the following cells:
+
 - Japanese: The japanese word with Kanji
   - This will also contain a small button to play the sound of the word
   - The japanese word will be a link to the Words Show page
@@ -127,9 +135,10 @@ This is table of words with the following cells:
 There should only be 50 words displayed at a time.
 
 There needs to be pagination
-  - Previous button: grey out if you cannot go further back
-  - Page 1 of 3: With the current page bolded
-  - Next button: greyed ouf if you canno go any further forwarded
+
+- Previous button: grey out if you cannot go further back
+- Page 1 of 3: With the current page bolded
+- Next button: greyed ouf if you canno go any further forwarded
 
 All table headings should be sortable, If you click it will toggle between ASC and DESC.
 An ascii arrow should indicate direction and the column being sorted with ASC pointing down and DESC pointing up.
@@ -143,6 +152,7 @@ The route for this page /words/:id
 The route for this page /word-groups
 
 This is table of word groups with the following cells:
+
 - Group Name: The name of the group
   - This will be a link to Word Groups Show
 - \# Words: The number of words associated with this group
