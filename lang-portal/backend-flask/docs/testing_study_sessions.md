@@ -96,6 +96,7 @@ curl -X POST http://localhost:5000/api/study_sessions/1/words/1/review \
 ```
 
 Expected Response (201 Created):
+
 ```json
 {
   "success": true,
@@ -117,6 +118,7 @@ curl -X POST http://localhost:5000/api/study_sessions/1/words/99999/review \
 ```
 
 Expected Response (404 Not Found):
+
 ```json
 {
   "error": "Word not found or not in session group",
@@ -134,6 +136,7 @@ curl -X POST http://localhost:5000/api/study_sessions/1/words/1/review \
 ```
 
 Expected Response (400 Bad Request):
+
 ```json
 {
   "error": "Missing required field",
@@ -151,6 +154,7 @@ Expected Response (400 Bad Request):
 ## Verification Steps for Word Reviews
 
 1. Check database after successful review:
+
    ```sql
    sqlite3 words.db
    > SELECT * FROM word_review_items WHERE word_id = 1 ORDER BY created_at DESC LIMIT 1;
