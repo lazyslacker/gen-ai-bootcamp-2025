@@ -38,7 +38,7 @@ describe('API Tests', () => {
             expect(res.body).to.have.property('pagination');
             expect(res.body.items).to.be.an('array');
             expect(res.body.items[0]).to.have.all.keys(
-                'id', 'japanese', 'romaji', 'english', 'parts',
+                'id', 'kanji', 'romaji', 'english', 'parts',
                 'times_reviewed', 'times_correct'
             );
         });
@@ -50,7 +50,7 @@ describe('API Tests', () => {
                 .expect(200);
 
             expect(res.body).to.have.property('id');
-            expect(res.body).to.have.property('japanese');
+            expect(res.body).to.have.property('kanji');
             expect(res.body).to.have.property('groups');
             expect(res.body.groups).to.be.an('array');
         });

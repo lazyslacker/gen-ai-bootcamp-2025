@@ -91,7 +91,7 @@ router.get('/', validate(rules.getWords), async (req, res) => {
             FROM words w
             LEFT JOIN word_review_items wri ON w.id = wri.word_id
             GROUP BY w.id
-            ORDER BY w.japanese
+            ORDER BY w.kanji
             LIMIT ? OFFSET ?
         `, [limit, offset]);
 

@@ -71,7 +71,7 @@ This document outlines an atomic, step-by-step plan to build the backend API usi
     ```sql
     CREATE TABLE IF NOT EXISTS words (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      japanese TEXT NOT NULL,
+      kanji TEXT NOT NULL,
       romaji TEXT NOT NULL,
       english TEXT NOT NULL,
       parts JSON NOT NULL
