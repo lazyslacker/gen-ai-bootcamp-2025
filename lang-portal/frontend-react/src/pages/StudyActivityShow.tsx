@@ -59,7 +59,7 @@ export default function StudyActivityShow() {
         
         // Fetch sessions for the current page
         const sessionsResponse = await fetch(
-          `http://localhost:5000/api/study-activities/${id}/sessions?page=${currentPage}&per_page=${ITEMS_PER_PAGE}`
+          `http://localhost:3000/api/study-activities/${id}/sessions?page=${currentPage}&per_page=${ITEMS_PER_PAGE}`
         )
         if (!sessionsResponse.ok) {
           throw new Error('Failed to fetch sessions')

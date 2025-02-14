@@ -19,12 +19,12 @@ const dashboardRouter = require('./routes/dashboard');
 const systemRouter = require('./routes/system');
 
 // Register routes
-app.use('/api/words', wordsRouter);
-app.use('/api/groups', groupsRouter);
-app.use('/api/study_sessions', studySessionsRouter);
-app.use('/api/study_activities', studyActivitiesRouter);
-app.use('/api/dashboard', dashboardRouter);
-app.use('/api', systemRouter);
+app.use('/words', wordsRouter);
+app.use('/groups', groupsRouter);
+app.use('/study_sessions', studySessionsRouter);
+app.use('/study_activities', studyActivitiesRouter);
+app.use('/dashboard', dashboardRouter);
+app.use('/', systemRouter);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

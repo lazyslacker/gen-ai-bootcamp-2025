@@ -52,7 +52,7 @@ This plan outlines the steps to implement the endpoint that creates a new study 
     ```python
     import requests
 
-    url = "http://localhost:5000/api/study_sessions"
+    url = "http://localhost:3000/api/study_sessions"
     payload = {
         "group_id": 1,
         "study_activity_id": 2
@@ -66,7 +66,7 @@ This plan outlines the steps to implement the endpoint that creates a new study 
   - [ ] **Using `curl`:** Test the endpoint with the following command:
 
     ```bash
-    curl -X POST http://localhost:5000/api/study_sessions \
+    curl -X POST http://localhost:3000/api/study_sessions \
          -H "Content-Type: application/json" \
          -d '{"group_id": 1, "study_activity_id": 2}'
     ```
