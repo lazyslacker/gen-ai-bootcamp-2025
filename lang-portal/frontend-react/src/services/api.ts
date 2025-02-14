@@ -86,6 +86,7 @@ export const fetchGroups = async (
   const response = await fetch(
     `${API_BASE_URL}/groups?page=${page}&sort_by=${sortBy}&order=${order}`
   );
+  console.log("api.tsx, for word groups:",`${API_BASE_URL}/groups?page=${page}&sort_by=${sortBy}&order=${order}`)
   if (!response.ok) {
     throw new Error('Failed to fetch groups');
   }

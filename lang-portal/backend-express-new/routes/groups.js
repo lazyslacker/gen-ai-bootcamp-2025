@@ -89,13 +89,19 @@ router.get('/', validate(rules.getGroups), async (req, res) => {
         `, [limit, offset]);
 
         const total = await db.asyncGet('SELECT COUNT(*) as count FROM groups');
-
         res.json({
-            items: groups,
+            groups: groups.map(
+                ({id, name, word_count}) => ({
+                    id,
+                    group_name: name,
+                    word_count
+                })
+            ),
+            total_pages: Math.ceil(total.count / limit),
             pagination: {
                 page,
                 limit,
-                total: total.count
+                total_pages: Math.ceil(total.count / limit)
             }
         });
     } catch (err) {
@@ -174,7 +180,7 @@ router.get('/:id/words', validate(rules.getGroupWords), async (req, res) => {
             WHERE wg.group_id = ?
             ORDER BY w.japanese
         `, [req.params.id]);
-        res.json(words);
+        res.json({words});
     } catch (err) {
         console.error('Error getting group words:', err);
         res.status(500).json({ error: err.message });
