@@ -4,9 +4,6 @@ const db = require('./db');
 
 async function runMigrations() {
     try {
-        // Connect to database first
-        await db.connect();
-        
         const migrationsDir = path.join(__dirname, 'migrations');
         const files = await fs.readdir(migrationsDir);
         
@@ -14,6 +11,8 @@ async function runMigrations() {
         const migrationFiles = files
             .filter(f => f.endsWith('.sql'))
             .sort();
+
+        console.log('Found migration files:', migrationFiles);
 
         for (const file of migrationFiles) {
             console.log('Running migration:', file);
@@ -32,18 +31,17 @@ async function runMigrations() {
     } catch (err) {
         console.error('Error running migrations:', err);
         throw err;
-    } finally {
-        // Close database connection
-        db.close();
     }
 }
 
-// Run migrations if this script is executed directly
+// Only close the connection if run directly
 if (require.main === module) {
-    runMigrations().catch(err => {
-        console.error('Migration failed:', err);
-        process.exit(1);
-    });
+    runMigrations()
+        .then(() => db.close())
+        .catch(err => {
+            console.error('Migration failed:', err);
+            process.exit(1);
+        });
 }
 
 module.exports = runMigrations;

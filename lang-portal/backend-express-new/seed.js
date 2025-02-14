@@ -1,10 +1,20 @@
 const db = require('./db');
+const runMigrations = require('./migrate');
 
 async function seedDatabase() {
     try {
+        // Connect to database first
+        await db.connect();
+
+        // Run migrations before seeding
+        console.log('Running migrations...');
+        await runMigrations();
+
+        console.log('Starting database seeding...');
         await db.asyncRun('BEGIN TRANSACTION');
 
         // Clear existing data
+        console.log('Clearing existing data...');
         await db.asyncRun('DELETE FROM word_review_items');
         await db.asyncRun('DELETE FROM study_sessions');
         await db.asyncRun('DELETE FROM words_groups');
@@ -14,6 +24,7 @@ async function seedDatabase() {
         await db.asyncRun('DELETE FROM sqlite_sequence');
 
         // Add study activities
+        console.log('Seeding study activities...');
         await db.asyncRun(`
             INSERT INTO study_activities (name, description, thumbnail_url, launch_url) VALUES 
             ('Typing Practice', 'Master Japanese typing with interactive exercises', '/images/typing.png', '/activities/typing'),
@@ -142,15 +153,18 @@ async function seedDatabase() {
         await db.asyncRun('ROLLBACK');
         console.error('Error seeding database:', err);
         throw err;
+    } finally {
+        // Close database connection when done
+        await db.close();
     }
 }
 
+// Export for use in other files
 module.exports = seedDatabase;
 
+// Run if called directly
 if (require.main === module) {
-    seedDatabase().then(() => {
-        db.close();
-    }).catch(err => {
+    seedDatabase().catch(err => {
         console.error('Seeding failed:', err);
         process.exit(1);
     });

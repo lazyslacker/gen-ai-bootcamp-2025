@@ -10,6 +10,12 @@ class Database {
 
     connect() {
         return new Promise((resolve, reject) => {
+            // Ensure data directory exists
+            const dataDir = path.dirname(this.dbPath);
+            if (!fs.existsSync(dataDir)) {
+                fs.mkdirSync(dataDir, { recursive: true });
+            }
+
             this.db = new sqlite3.Database(this.dbPath, (err) => {
                 if (err) {
                     console.error('Error connecting to database:', err);
