@@ -12,16 +12,16 @@ export default function Words() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const loadWords = async () => {
+    async function loadWords() {
       setIsLoading(true)
       setError(null)
       try {
         const response = await fetchWords(currentPage, sortKey, sortDirection)
-        setWords(response.words)
-        setTotalPages(response.total_pages)
-      } catch (err) {
+        setWords(response.items)
+        setTotalPages(Math.ceil(response.total / response.limit))
+      } catch (error) {
         setError('Failed to load words')
-        console.error(err)
+        console.error('Error loading words:', error)
       } finally {
         setIsLoading(false)
       }
