@@ -39,7 +39,7 @@ export default function WordsTable({ words, sortKey, sortDirection, onSort }: Wo
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
-          {words.map((word) => (
+          {words && words.map((word) => (
             <tr key={word.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
               <td className="px-6 py-4 whitespace-nowrap">
                 <Link
