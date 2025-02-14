@@ -12,7 +12,9 @@ interface WordsTableProps {
   onSort: (key: WordSortKey) => void
 }
 
-export default function WordsTable({ words, sortKey, sortDirection, onSort }: WordsTableProps) {
+export default function WordsTable({ words = [], sortKey, sortDirection, onSort }: WordsTableProps) {
+  if (!words) return null;
+
   return (
     <div className="overflow-x-auto bg-white dark:bg-gray-800 rounded-lg shadow">
       <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -39,7 +41,7 @@ export default function WordsTable({ words, sortKey, sortDirection, onSort }: Wo
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
-          {words && words.map((word) => (
+          {words.map((word) => (
             <tr key={word.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
               <td className="px-6 py-4 whitespace-nowrap">
                 <Link
