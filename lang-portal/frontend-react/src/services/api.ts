@@ -1,5 +1,4 @@
-// Export the API_BASE_URL so it can be imported by other components
-export const API_BASE_URL = 'http://localhost:3000/api';
+const API_BASE_URL = 'http://localhost:5000';
 
 // Group types
 export interface Group {
@@ -77,31 +76,6 @@ export interface StudyStats {
   active_groups: number;
   current_streak: number;
 }
-
-// Add ActivityCard type and fetch function
-export type ActivityCard = {
-  id: number
-  preview_url: string
-  title: string
-  launch_url: string
-}
-
-// Add proper types for study activities
-export interface StudyActivity {
-    id: number;
-    title: string;
-    description: string;
-    preview_url: string;
-    launch_url: string;
-}
-
-export const fetchStudyActivities = async (): Promise<StudyActivity[]> => {
-    const response = await fetch(`${API_BASE_URL}/study-activities`);
-    if (!response.ok) {
-        throw new Error('Failed to fetch study activities');
-    }
-    return response.json();
-};
 
 // Group API
 export const fetchGroups = async (
@@ -227,88 +201,55 @@ export interface StudySessionsResponse {
   total_pages: number;
 }
 
-export const fetchStudySessions = async (
+export async function fetchStudySessions(
   page: number = 1,
-  perPage: number = 10,
-  filters?: { groupId?: number }
-): Promise<StudySessionsResponse> => {
-  const params = new URLSearchParams({
-    page: page.toString(),
-    per_page: perPage.toString(),
-  })
-
-  if (filters?.groupId) {
-    params.append('group_id', filters.groupId.toString())
-  }
-
-  const response = await fetch(`${API_BASE_URL}/study-sessions?${params}`);
+  perPage: number = 10
+): Promise<StudySessionsResponse> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/study-sessions?page=${page}&per_page=${perPage}`
+  );
   if (!response.ok) {
     throw new Error('Failed to fetch study sessions');
   }
   return response.json();
-};
+}
+
+export interface StudySessionsResponse {
+  study_sessions: StudySession[];
+  total_pages: number;
+  current_page: number;
+}
+
+export async function fetchGroupStudySessions(
+  groupId: number,
+  page: number = 1,
+  sortBy: string = 'created_at',
+  order: 'asc' | 'desc' = 'desc'
+): Promise<StudySessionsResponse> {
+  const response = await fetch(
+    `${API_BASE_URL}/groups/${groupId}/study_sessions?page=${page}&sort_by=${sortBy}&order=${order}`
+  );
+  if (!response.ok) {
+    throw new Error('Failed to fetch group study sessions');
+  }
+  return response.json();
+}
 
 // Dashboard API
-export const fetchDashboardStats = async (): Promise<{
-    total_words_studied: number;
-    total_available_words: number;
-    success_rate: number;
-    total_study_sessions: number;
-    total_active_groups: number;
-    study_streak_days: number;
-}> => {
-    const [progress, stats] = await Promise.all([
-        fetch(`${API_BASE_URL}/dashboard/study_progress`).then(res => res.json()),
-        fetch(`${API_BASE_URL}/dashboard/quick-stats`).then(res => res.json())
-    ]);
-
-    return {
-        ...progress,
-        ...stats
-    };
+export const fetchRecentStudySession = async (): Promise<RecentSession | null> => {
+  const response = await fetch(`${API_BASE_URL}/dashboard/recent-session`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch recent session');
+  }
+  const data = await response.json();
+  console.log('Raw response from recent session:', data);
+  return data;
 };
 
-export const fetchRecentSession = async (): Promise<RecentSession | null> => {
-    const response = await fetch(`${API_BASE_URL}/dashboard/last_study_session`);
-    if (!response.ok) {
-        throw new Error('Failed to fetch recent session');
-    }
-    return response.json();
+export const fetchStudyStats = async (): Promise<StudyStats> => {
+  const response = await fetch(`${API_BASE_URL}/dashboard/stats`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch study stats');
+  }
+  return response.json();
 };
-
-// Add error handling utility
-export class APIError extends Error {
-    constructor(
-        message: string,
-        public status?: number,
-        public data?: any
-    ) {
-        super(message);
-        this.name = 'APIError';
-    }
-}
-
-// Add request helper with error handling
-export async function apiRequest<T>(
-    endpoint: string,
-    options: RequestInit = {}
-): Promise<T> {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers,
-        },
-    });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}));
-        throw new APIError(
-            error.message || 'An error occurred',
-            response.status,
-            error
-        );
-    }
-
-    return response.json();
-}

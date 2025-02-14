@@ -1,25 +1,22 @@
 import React, { useState, useEffect } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useParams, Link } from 'react-router-dom'
 import { 
   fetchGroupDetails, 
-  fetchStudySessions,
+  fetchGroupStudySessions, 
   fetchGroupWords,
   type GroupDetails, 
   type StudySession,
+  type StudySessionSortKey,
   type Word 
 } from '../services/api'
 import WordsTable, { type WordSortKey } from '../components/WordsTable'
 import StudySessionsTable from '../components/StudySessionsTable'
 import Pagination from '../components/Pagination'
 import { useNavigation } from '../context/NavigationContext'
-import { useApi } from '@/hooks/useApi'
-
-// Define the sort key type here since it's removed from api.ts
-type StudySessionSortKey = 'startTime' | 'activity' | 'wordCount';
 
 export default function GroupShow() {
   const { id } = useParams<{ id: string }>()
-  const navigate = useNavigate()
+  const [group, setGroup] = useState<GroupDetails | null>(null)
   const { setCurrentGroup } = useNavigation()
   const [words, setWords] = useState<Word[]>([])
   const [studySessions, setStudySessions] = useState<StudySession[]>([])
@@ -31,39 +28,49 @@ export default function GroupShow() {
   const [sessionsPage, setSessionsPage] = useState(1)
   const [wordsTotalPages, setWordsTotalPages] = useState(1)
   const [sessionsTotalPages, setSessionsTotalPages] = useState(1)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  // Validate ID is a number
-  const groupId = id ? parseInt(id, 10) : null
-
-  // Handle invalid IDs
   useEffect(() => {
-    if (id && !groupId) {
-      navigate('/groups')
+    const loadData = async () => {
+      if (!id) return
+      
+      setIsLoading(true)
+      setError(null)
+      try {
+        const groupData = await fetchGroupDetails(parseInt(id, 10))
+        setGroup(groupData)
+        setCurrentGroup(groupData)
+        
+        const [wordsData, sessionsData] = await Promise.all([
+          fetchGroupWords(
+            parseInt(id, 10),
+            wordsPage,
+            wordSortKey,
+            wordSortDirection
+          ),
+          fetchGroupStudySessions(
+            parseInt(id, 10),
+            sessionsPage,
+            sessionSortKey,
+            sessionSortDirection
+          )
+        ])
+        
+        setWords(wordsData.words)
+        setWordsTotalPages(wordsData.total_pages)
+        setStudySessions(sessionsData.study_sessions)
+        setSessionsTotalPages(sessionsData.total_pages)
+      } catch (err) {
+        setError('Failed to load group details')
+        console.error(err)
+      } finally {
+        setIsLoading(false)
+      }
     }
-  }, [id, navigate])
 
-  // Return early if no valid ID
-  if (!groupId) {
-    return null
-  }
-
-  const { 
-    data: group,
-    isLoading: isLoadingGroup,
-    error: groupError
-  } = useApi<GroupDetails>(
-    () => fetchGroupDetails(groupId),
-    { dependencies: [groupId] }
-  )
-
-  const {
-    data: wordsResponse,
-    isLoading: isLoadingWords,
-    error: wordsError
-  } = useApi(
-    () => fetchGroupWords(groupId),
-    { dependencies: [groupId] }
-  )
+    loadData()
+  }, [id, wordsPage, sessionsPage, wordSortKey, wordSortDirection, sessionSortKey, sessionSortDirection, setCurrentGroup])
 
   // Clean up the context when unmounting
   useEffect(() => {
@@ -90,28 +97,12 @@ export default function GroupShow() {
     }
   }
 
-  if (isLoadingGroup || isLoadingWords) {
-    return (
-      <div className="flex justify-center items-center min-h-[200px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"></div>
-      </div>
-    )
+  if (isLoading) {
+    return <div className="text-center py-4">Loading...</div>
   }
 
-  if (groupError || wordsError) {
-    return (
-      <div className="text-center text-red-500 py-4">
-        {groupError?.message || wordsError?.message}
-      </div>
-    )
-  }
-
-  if (!group) {
-    return (
-      <div className="text-center py-4">
-        Group not found
-      </div>
-    )
+  if (error || !group) {
+    return <div className="text-red-500 text-center py-4">{error || 'Group not found'}</div>
   }
 
   return (

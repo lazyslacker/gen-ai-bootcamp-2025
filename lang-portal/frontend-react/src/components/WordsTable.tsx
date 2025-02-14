@@ -6,18 +6,13 @@ import { Word } from '../services/api'
 export type WordSortKey = 'kanji' | 'romaji' | 'english' | 'correct_count' | 'wrong_count'
 
 interface WordsTableProps {
-  words: Word[]  // This should never be undefined
+  words: Word[]
   sortKey: WordSortKey
   sortDirection: 'asc' | 'desc'
   onSort: (key: WordSortKey) => void
 }
 
-export default function WordsTable({ 
-  words = [], // Provide default empty array
-  sortKey, 
-  sortDirection, 
-  onSort 
-}: WordsTableProps) {
+export default function WordsTable({ words, sortKey, sortDirection, onSort }: WordsTableProps) {
   return (
     <div className="overflow-x-auto bg-white dark:bg-gray-800 rounded-lg shadow">
       <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -44,38 +39,30 @@ export default function WordsTable({
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
-          {words.length === 0 ? (
-            <tr>
-              <td colSpan={5} className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
-                No words found
+          {words.map((word) => (
+            <tr key={word.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+              <td className="px-6 py-4 whitespace-nowrap">
+                <Link
+                  to={`/words/${word.id}`}
+                  className="text-blue-600 dark:text-blue-400 hover:underline"
+                >
+                  {word.kanji}
+                </Link>
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                {word.romaji}
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                {word.english}
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-green-500 dark:text-green-400">
+                {word.correct_count}
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-red-500 dark:text-red-400">
+                {word.wrong_count}
               </td>
             </tr>
-          ) : (
-            words.map((word) => (
-              <tr key={word.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <Link
-                    to={`/words/${word.id}`}
-                    className="text-blue-600 dark:text-blue-400 hover:underline"
-                  >
-                    {word.kanji}
-                  </Link>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                  {word.romaji}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                  {word.english}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-green-500 dark:text-green-400">
-                  {word.correct_count}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-red-500 dark:text-red-400">
-                  {word.wrong_count}
-                </td>
-              </tr>
-            ))
-          )}
+          ))}
         </tbody>
       </table>
     </div>

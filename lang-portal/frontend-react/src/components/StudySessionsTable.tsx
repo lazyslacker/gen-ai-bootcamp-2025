@@ -7,9 +7,9 @@ export type StudySessionSortKey = 'id' | 'activity_name' | 'group_name' | 'start
 
 interface StudySessionsTableProps {
   sessions: StudySession[]
-  sortKey: string
+  sortKey: StudySessionSortKey
   sortDirection: 'asc' | 'desc'
-  onSort: (key: string) => void
+  onSort: (key: StudySessionSortKey) => void
 }
 
 export default function StudySessionsTable({ 
@@ -23,12 +23,6 @@ export default function StudySessionsTable({
       <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
         <thead className="bg-gray-50 dark:bg-gray-900">
           <tr>
-            <th 
-              onClick={() => onSort('startTime')}
-              className="px-6 py-3 text-left cursor-pointer"
-            >
-              Date {sortKey === 'startTime' && (sortDirection === 'asc' ? '↑' : '↓')}
-            </th>
             {(['id', 'activity_name', 'group_name', 'start_time', 'end_time', 'review_items_count'] as const).map((key) => (
               <th
                 key={key}
@@ -49,9 +43,6 @@ export default function StudySessionsTable({
         <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
           {sessions.map((session) => (
             <tr key={session.id} className="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">
-              <td className="px-6 py-4 whitespace-nowrap">
-                {new Date(session.start_time).toLocaleDateString()}
-              </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <Link to={`/sessions/${session.id}`} className="text-blue-600 dark:text-blue-400 hover:underline">
                   {session.id}
