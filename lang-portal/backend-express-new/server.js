@@ -25,18 +25,33 @@ db.connect().catch(console.error);
 // Serve API documentation
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
 
+// Add this before your routes
+app.use((req, res, next) => {
+    console.log('Request:', {
+        method: req.method,
+        path: req.path,
+        params: req.params,
+        query: req.query,
+        body: req.body
+    });
+    next();
+});
+
 // Routes
-app.use('/api/dashboard', require('./routes/dashboard'));
+app.use('/api/study-activities', require('./routes/study-activities'));
 app.use('/api/study-sessions', require('./routes/study-sessions'));
 app.use('/api/groups', require('./routes/groups'));
 app.use('/api/words', require('./routes/words'));
-app.use('/api/study-activities', require('./routes/study-activities'));
+app.use('/api/dashboard', require('./routes/dashboard'));
 app.use('/api', require('./routes/system'));
 
 // Error handler
 app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Error:', err);
+    res.status(500).json({ 
+        error: 'Internal server error',
+        message: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
 });
 
 // Start server

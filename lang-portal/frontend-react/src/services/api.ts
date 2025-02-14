@@ -226,9 +226,9 @@ export async function fetchGroupStudySessions(
   sortBy: string = 'created_at',
   order: 'asc' | 'desc' = 'desc'
 ): Promise<StudySessionsResponse> {
-  const response = await fetch(
-    `${API_BASE_URL}/groups/${groupId}/study_sessions?page=${page}&sort_by=${sortBy}&order=${order}`
-  );
+  const url = `${API_BASE_URL}/groups/${groupId}/study_sessions?page=${page}&sort_by=${sortBy}&order=${order}`.replace(/([^:]\/)\/+/g, "$1");
+  
+  const response = await fetch(url);
   if (!response.ok) {
     throw new Error('Failed to fetch group study sessions');
   }
@@ -253,3 +253,49 @@ export const fetchStudyStats = async (): Promise<StudyStats> => {
   }
   return response.json();
 };
+
+export async function fetchActivitySessions(
+  activityId: number,
+  page: number = 1,
+  perPage: number = 10
+): Promise<StudySessionsResponse> {
+  const response = await fetch(
+    `${API_BASE_URL}/study-activities/${activityId}/sessions?page=${page}&per_page=${perPage}`
+  );
+  if (!response.ok) {
+    throw new Error('Failed to fetch activity sessions');
+  }
+  return response.json();
+}
+
+export interface ActivityLaunchConfig {
+  activity: {
+    id: number;
+    title: string;
+    description: string;
+    preview_url: string;
+    launch_url: string;
+  };
+  groups: {
+    id: number;
+    name: string;
+    word_count: number;
+  }[];
+  config: {
+    min_words_required: number;
+    max_session_duration: number;
+    default_group_id: number;
+  };
+}
+
+export async function fetchActivityLaunchConfig(
+  activityId: number
+): Promise<ActivityLaunchConfig> {
+  const response = await fetch(
+    `${API_BASE_URL}/study-activities/${activityId}/launch`
+  );
+  if (!response.ok) {
+    throw new Error('Failed to fetch activity launch config');
+  }
+  return response.json();
+}
