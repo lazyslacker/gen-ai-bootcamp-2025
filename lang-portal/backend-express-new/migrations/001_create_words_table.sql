@@ -4,4 +4,4 @@ CREATE TABLE IF NOT EXISTS words (
     romaji TEXT NOT NULL,
     english TEXT NOT NULL,
     parts JSON NOT NULL
-); 
+);

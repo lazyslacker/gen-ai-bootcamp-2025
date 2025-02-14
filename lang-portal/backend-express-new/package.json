@@ -12,7 +12,7 @@
     "setup": "make setup",
     "clean": "make clean",
     "reset-db": "make reset-db",
-    "seed-db": "make seed-db",
+    "seed-db": "node scripts/reset-and-seed.js",
     "docs": "swagger-jsdoc -d docs/swagger.js -o docs/swagger.json",
     "init-dev-db": "node scripts/init-dev-db.js"
   },

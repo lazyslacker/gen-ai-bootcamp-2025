@@ -35,6 +35,7 @@ async function seedDatabase() {
         `);
 
         // Add word groups
+        console.log('Seeding groups...');
         await db.asyncRun(`
             INSERT INTO groups (name) VALUES 
             ('Basic Greetings'),
@@ -47,6 +48,7 @@ async function seedDatabase() {
         `);
 
         // Add words with their groups
+        console.log('Seeding words...');
         const words = [
             // Basic Greetings
             ['こんにちは', 'konnichiwa', 'hello', '["greeting", "basic"]', 1],
@@ -59,38 +61,13 @@ async function seedDatabase() {
             ['に', 'ni', 'two', '["number", "basic"]', 2],
             ['さん', 'san', 'three', '["number", "basic"]', 2],
             ['よん', 'yon', 'four', '["number", "basic"]', 2],
-            ['ご', 'go', 'five', '["number", "basic"]', 2],
-            
-            // Days
-            ['げつようび', 'getsuyoubi', 'Monday', '["time", "day"]', 3],
-            ['かようび', 'kayoubi', 'Tuesday', '["time", "day"]', 3],
-            ['すいようび', 'suiyoubi', 'Wednesday', '["time", "day"]', 3],
-            
-            // Common Phrases
-            ['ありがとう', 'arigatou', 'thank you', '["phrase", "basic"]', 4],
-            ['どういたしまして', 'douitashimashite', "you're welcome", '["phrase", "basic"]', 4],
-            ['すみません', 'sumimasen', 'excuse me', '["phrase", "basic"]', 4],
-            
-            // Family
-            ['かぞく', 'kazoku', 'family', '["family", "noun"]', 5],
-            ['おかあさん', 'okaasan', 'mother', '["family", "noun"]', 5],
-            ['おとうさん', 'otousan', 'father', '["family", "noun"]', 5],
-            
-            // Colors
-            ['あか', 'aka', 'red', '["color", "noun"]', 6],
-            ['あお', 'ao', 'blue', '["color", "noun"]', 6],
-            ['きいろ', 'kiiro', 'yellow', '["color", "noun"]', 6],
-            
-            // Food
-            ['ごはん', 'gohan', 'rice', '["food", "noun"]', 7],
-            ['みず', 'mizu', 'water', '["drink", "noun"]', 7],
-            ['おちゃ', 'ocha', 'tea', '["drink", "noun"]', 7]
+            ['ご', 'go', 'five', '["number", "basic"]', 2]
         ];
 
-        for (const [japanese, romaji, english, parts, groupId] of words) {
+        for (const [kanji, romaji, english, parts, groupId] of words) {
             const result = await db.asyncRun(
-                'INSERT INTO words (japanese, romaji, english, parts) VALUES (?, ?, ?, ?)',
-                [japanese, romaji, english, parts]
+                'INSERT INTO words (kanji, romaji, english, parts) VALUES (?, ?, ?, ?)',
+                [kanji, romaji, english, parts]
             );
             await db.asyncRun(
                 'INSERT INTO words_groups (word_id, group_id) VALUES (?, ?)',
@@ -98,11 +75,12 @@ async function seedDatabase() {
             );
         }
 
-        // Add study sessions with reviews
-        const activities = await db.asyncAll('SELECT id FROM study_activities');
-        const groups = await db.asyncAll('SELECT id FROM groups');
-        
-        // Create some study sessions over the past week
+        // Create some study sessions
+        console.log('Creating study sessions...');
+        const groups = await db.asyncAll('SELECT * FROM groups');
+        const activities = await db.asyncAll('SELECT * FROM study_activities');
+
+        // Create sessions over the past week
         for (let i = 0; i < 7; i++) {
             const date = new Date();
             date.setDate(date.getDate() - i);
@@ -115,7 +93,7 @@ async function seedDatabase() {
                 [group.id, activity.id, date.toISOString()]
             );
 
-            // Add some random reviews for this session
+            // Add reviews for this session
             const words = await db.asyncAll(
                 'SELECT word_id FROM words_groups WHERE group_id = ?',
                 [group.id]
@@ -154,15 +132,12 @@ async function seedDatabase() {
         console.error('Error seeding database:', err);
         throw err;
     } finally {
-        // Close database connection when done
         await db.close();
     }
 }
 
-// Export for use in other files
 module.exports = seedDatabase;
 
-// Run if called directly
 if (require.main === module) {
     seedDatabase().catch(err => {
         console.error('Seeding failed:', err);
