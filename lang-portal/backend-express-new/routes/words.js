@@ -98,13 +98,21 @@ router.get('/', validate(rules.getWords), async (req, res) => {
         const total = await db.asyncGet('SELECT COUNT(*) as count FROM words');
 
         res.json({
-            items: words.map(({ id, ...rest }) => ({
-                kanji: rest.kanji,
-                romaji: rest.romaji,
-                english: rest.english,
-                correct_count: rest.times_correct,
-                wrong_count: rest.times_reviewed - rest.times_correct
-            })), // Exclude the id property
+            items: words.map(({ 
+                id, 
+                kanji, 
+                romaji, 
+                english, 
+                times_correct, 
+                times_reviewed 
+            }) => ({
+                id,
+                kanji,
+                romaji,
+                english,
+                correct_count: times_correct,
+                wrong_count: times_reviewed - times_correct
+            })),
             pagination: {
                 page,
                 limit,
@@ -177,7 +185,21 @@ router.get('/:id', validate(rules.getWord), async (req, res) => {
         `, [req.params.id]);
 
         word.groups = groups;
-        res.json(word);
+        res.json({
+                "japanese": word.kanji,
+                "romaji":   word.romaji,
+                "english": word.english,
+                "stats": {
+                  "correct_count": word.times_correct,
+                  "wrong_count": word.times_reviewed - word.times_correct
+                },
+                "groups": [
+                  {
+                    "id": word.id,
+                    "name": word.groups[0].name
+                  }
+                ]
+        });
     } catch (err) {
         console.error('Error getting word:', err);
         res.status(500).json({ error: err.message });
