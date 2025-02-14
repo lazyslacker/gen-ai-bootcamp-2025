@@ -185,21 +185,7 @@ router.get('/:id', validate(rules.getWord), async (req, res) => {
         `, [req.params.id]);
 
         word.groups = groups;
-        res.json({
-                "japanese": word.kanji,
-                "romaji":   word.romaji,
-                "english": word.english,
-                "stats": {
-                  "correct_count": word.times_correct,
-                  "wrong_count": word.times_reviewed - word.times_correct
-                },
-                "groups": [
-                  {
-                    "id": word.id,
-                    "name": word.groups[0].name
-                  }
-                ]
-        });
+        res.json({word});
     } catch (err) {
         console.error('Error getting word:', err);
         res.status(500).json({ error: err.message });

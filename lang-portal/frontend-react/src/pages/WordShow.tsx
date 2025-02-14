@@ -87,7 +87,6 @@ export default function WordShow() {
               </div>
             </div>
           </div>
-          console.log(word.groups)
           {word.groups && word.groups.length > 0 && (
             <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
               <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Word Groups</h2>

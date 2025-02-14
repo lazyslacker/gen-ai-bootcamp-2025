@@ -18,7 +18,7 @@ export default function Words() {
       try {
         const response = await fetchWords(currentPage, sortKey, sortDirection)
         setWords(response.items)
-        setTotalPages(Math.ceil(response.total / response.limit))
+        setTotalPages(Math.ceil(response.pagination.total / response.pagination.limit))
       } catch (error) {
         setError('Failed to load words')
         console.error('Error loading words:', error)
