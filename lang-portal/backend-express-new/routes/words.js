@@ -102,8 +102,8 @@ router.get('/', validate(rules.getWords), async (req, res) => {
                 kanji: rest.kanji,
                 romaji: rest.romaji,
                 english: rest.english,
-                correct: rest.times_correct,
-                wrong: rest.times_reviewed - rest.times_correct
+                correct_count: rest.times_correct,
+                wrong_count: rest.times_reviewed - rest.times_correct
             })), // Exclude the id property
             pagination: {
                 page,
