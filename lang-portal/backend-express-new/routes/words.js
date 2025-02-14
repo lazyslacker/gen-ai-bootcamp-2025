@@ -185,7 +185,20 @@ router.get('/:id', validate(rules.getWord), async (req, res) => {
         `, [req.params.id]);
 
         word.groups = groups;
-        res.json({word});
+        res.json({
+            word: {
+                id: word.id, // Keep the id
+                kanji: word.kanji,
+                romaji: word.romaji,
+                english: word.english,
+                parts: word.parts, // Include parts as is
+                times_reviewed: word.times_reviewed,
+                times_correct: word.times_correct,
+                groups: word.groups, // Include groups as is
+                correct_count: word.times_correct,
+                wrong_count: word.times_reviewed - word.times_correct // Calculate times wrong
+            }
+        });
     } catch (err) {
         console.error('Error getting word:', err);
         res.status(500).json({ error: err.message });
