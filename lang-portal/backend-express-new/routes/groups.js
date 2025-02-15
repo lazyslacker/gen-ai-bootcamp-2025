@@ -266,7 +266,6 @@ router.get('/:id/study-sessions', async (req, res) => {
         // Use mapped column name if it exists, otherwise use the original
         sortBy = columnMap[sortBy] || sortBy;
 
-        console.log("hi I'm in the group study sessions route")
         // First check if group exists
         const group = await db.asyncGet(
             'SELECT id FROM groups WHERE id = ?',
