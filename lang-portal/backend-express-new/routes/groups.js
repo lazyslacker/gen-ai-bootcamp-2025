@@ -135,10 +135,18 @@ router.get('/', validate(rules.getGroups), async (req, res) => {
  */
 router.get('/:id', validate(rules.getGroup), async (req, res) => {
     try {
-        const group = await db.asyncGet('SELECT * FROM groups WHERE id = ?', [req.params.id]);
+        //const group = await db.asyncGet('SELECT * FROM groups WHERE id = ?', [req.params.id]);
+        const group = await db.asyncGet(`
+            SELECT g.*, COUNT(DISTINCT wg.word_id) as word_count
+            FROM groups g
+            LEFT JOIN words_groups wg ON g.id = wg.group_id
+            GROUP BY g.id
+            ORDER BY g.name`
+            );
         if (!group) {
             return res.status(404).json({ error: 'Group not found' });
         }
+        console.log(group)
         res.json(group);
     } catch (err) {
         console.error('Error getting group:', err);
@@ -173,14 +181,42 @@ router.get('/:id', validate(rules.getGroup), async (req, res) => {
  */
 router.get('/:id/words', validate(rules.getGroupWords), async (req, res) => {
     try {
+
+        const sortBy = req.query.sort_by || 'default_column'; // Default column if not provided
+        const sortOrder = req.query.order || 'asc'; // Default to ascending order
+
+        const validSortColumns = ['id', 'kanji', 'romaji', 'english']; // List of valid columns
+        const validSortOrders = ['asc', 'desc']; // Valid sort orders
+
+        // Validate sort column
+        if (!validSortColumns.includes(sortBy)) {
+            return res.status(400).json({ error: 'Invalid sort column' });
+        }
+
+        // Validate sort order
+        if (!validSortOrders.includes(sortOrder)) {
+            return res.status(400).json({ error: 'Invalid sort order' });
+        }
+
         const words = await db.asyncAll(`
             SELECT w.*
             FROM words w
             JOIN words_groups wg ON w.id = wg.word_id
             WHERE wg.group_id = ?
-            ORDER BY w.kanji
+            ORDER BY ${sortBy} ${sortOrder}
         `, [req.params.id]);
-        res.json({words});
+
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const offset = (page - 1) * limit;
+
+        const total = await db.asyncGet('SELECT COUNT(*) as count FROM words');
+
+        res.json({words, 
+            total_pages: Math.ceil(total.count / limit),
+            current_page: page
+        });
+
     } catch (err) {
         console.error('Error getting group words:', err);
         res.status(500).json({ error: err.message });
@@ -282,12 +318,15 @@ router.get('/:id/study-sessions', async (req, res) => {
         const sessions = await db.asyncAll(`
             SELECT 
                 ss.id,
-                ss.created_at,
-                ss.study_activity_id,
+                ss.group_id,
+                g.name as group_name,
+                ss.study_activity_id as activity_id,
                 sa.name as activity_name,
-                COUNT(wri.id) as review_count,
-                SUM(CASE WHEN wri.correct THEN 1 ELSE 0 END) as correct_count
+                ss.created_at as start_time,
+                ss.created_at as end_time,
+                COUNT(wri.id) as review_items_count
             FROM study_sessions ss
+            JOIN groups g ON ss.group_id = g.id
             JOIN study_activities sa ON ss.study_activity_id = sa.id
             LEFT JOIN word_review_items wri ON ss.id = wri.study_session_id
             WHERE ss.group_id = ?
@@ -302,11 +341,9 @@ router.get('/:id/study-sessions', async (req, res) => {
         );
 
         res.json({
-            items: sessions,
-            total: total.count,
-            page,
-            per_page: perPage,
-            total_pages: Math.ceil(total.count / perPage)
+            study_sessions: sessions,
+            total_pages: Math.ceil(total.count / perPage),
+            current_page: page
         });
     } catch (err) {
         console.error('Error getting group study sessions:', err);

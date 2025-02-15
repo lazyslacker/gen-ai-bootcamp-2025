@@ -112,6 +112,7 @@ export const fetchGroupDetails = async (
   order: 'asc' | 'desc' = 'asc'
 ): Promise<GroupDetails> => {
   const response = await fetch(`${API_BASE_URL}/groups/${groupId}`);
+  console.log("api.tsx, for group details:",`${API_BASE_URL}/groups/${groupId}`)
   if (!response.ok) {
     throw new Error('Failed to fetch group details');
   }
@@ -127,6 +128,7 @@ export const fetchGroupWords = async (
   const response = await fetch(
     `${API_BASE_URL}/groups/${groupId}/words?page=${page}&sort_by=${sortBy}&order=${order}`
   );
+  console.log("api.tsx, for group words:",`${API_BASE_URL}/groups/${groupId}/words?page=${page}&sort_by=${sortBy}&order=${order}`)
   if (!response.ok) {
     throw new Error('Failed to fetch group words');
   }
@@ -228,7 +230,7 @@ export async function fetchGroupStudySessions(
   order: 'asc' | 'desc' = 'desc'
 ): Promise<StudySessionsResponse> {
   const url = `${API_BASE_URL}/groups/${groupId}/study-sessions?page=${page}&sort_by=${sortBy}&order=${order}`;
-  
+  console.log("api.tsx, for group study sessions:",`${API_BASE_URL}/groups/${groupId}/study-sessions?page=${page}&sort_by=${sortBy}&order=${order}`)
   const response = await fetch(url);
   if (!response.ok) {
     throw new Error('Failed to fetch group study sessions');

@@ -61,6 +61,12 @@ export default function GroupShow() {
         setWordsTotalPages(wordsData.total_pages)
         setStudySessions(sessionsData.study_sessions)
         setSessionsTotalPages(sessionsData.total_pages)
+
+        console.log("GroupShow.tsx, wordsData.words:",wordsData.words)
+        console.log("GroupShow.tsx, wordsData.total_pages:",wordsData.total_pages)
+        console.log("GroupShow.tsx, sessionsData.study_sessions:",sessionsData.study_sessions)
+        console.log("GroupShow.tsx, sessionsData.total_pages:",sessionsData.total_pages)
+
       } catch (err) {
         setError('Failed to load group details')
         console.error(err)
