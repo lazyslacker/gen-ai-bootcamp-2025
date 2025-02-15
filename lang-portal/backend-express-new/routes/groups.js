@@ -178,7 +178,7 @@ router.get('/:id/words', validate(rules.getGroupWords), async (req, res) => {
             FROM words w
             JOIN words_groups wg ON w.id = wg.word_id
             WHERE wg.group_id = ?
-            ORDER BY w.japanese
+            ORDER BY w.kanji
         `, [req.params.id]);
         res.json({words});
     } catch (err) {
@@ -247,15 +247,26 @@ router.get('/:id/words', validate(rules.getGroupWords), async (req, res) => {
  *       404:
  *         description: Group not found
  */
-router.get('/:id/study_sessions', async (req, res) => {
+router.get('/:id/study-sessions', async (req, res) => {
     try {
         const { id } = req.params;
         const page = parseInt(req.query.page) || 1;
         const perPage = parseInt(req.query.per_page) || 10;
         const offset = (page - 1) * perPage;
-        const sortBy = req.query.sort_by || 'created_at';
+        let sortBy = req.query.sort_by || 'created_at';
         const order = req.query.order || 'desc';
 
+        // Map frontend column names to database column names
+        const columnMap = {
+            'startTime': 'created_at',
+            'endTime': 'created_at',
+            'createdAt': 'created_at'
+        };
+
+        // Use mapped column name if it exists, otherwise use the original
+        sortBy = columnMap[sortBy] || sortBy;
+
+        console.log("hi I'm in the group study sessions route")
         // First check if group exists
         const group = await db.asyncGet(
             'SELECT id FROM groups WHERE id = ?',
