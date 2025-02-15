@@ -65,6 +65,7 @@ This is also where I ran out of Cursor credits, and I decided to upgrade to Curs
 
 - I threw away the existing implementation and re-started from a previous commit which seemed more closely aligned with the desired implementation.
 - I began manually debugging the issues showed by the front-end, reasoning through the issues one by one. I did not know any of the technologies used, so I learned and guessed as I went along.
+- I realized quickly that it was essential to ensure the database was setup correctly before proceeding to debug any other implementation issues. I promped the AI to generate the necessary database schema, migration scripts, seed data and scripts to reset/re-initialize the database. Knowing that the database was set up correctly allowed me to focus on the backend and frontend implementations. 
 - I slowly fixed the issues one by one, initially using the "traditional" way, using Google to search for related fixes.
 - Then I realized I could try Cursor for very specific guidance, which was much faster than Google searches--the suggestions I received were much more relevant and accurate.
 - Towards the end I became familiar with the frontend and the backend. At that point I could simply tell Cursor in Composer mode "this file is the backend implementation for the API endpoint, this file is the front end implementation that invokes the API endpoint, this is the error message I'm seeing, can you help me fix it?" and the AI would fix the issue immediately.
