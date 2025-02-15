@@ -180,7 +180,7 @@ router.get('/stats', async (req, res) => {
                     COUNT(DISTINCT w.id) as total_vocabulary,
                     COUNT(DISTINCT wri.word_id) as total_words_studied,
                     COUNT(DISTINCT CASE WHEN wri.correct THEN wri.word_id END) as mastered_words,
-                    ROUND(AVG(CASE WHEN wri.correct THEN 100.0 ELSE 0 END), 2) as success_rate,
+                    ROUND(AVG(CASE WHEN wri.correct THEN 1 ELSE 0 END), 2) as success_rate,
                     COUNT(DISTINCT ss.id) as total_sessions,
                     COUNT(DISTINCT ss.group_id) as active_groups
                 FROM words w
