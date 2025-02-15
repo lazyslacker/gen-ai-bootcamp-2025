@@ -34,10 +34,17 @@ router.get('/', async (req, res) => {
 // GET /api/study-activities/:id
 router.get('/:id', async (req, res) => {
     try {
-        const activity = await db.asyncGet(
-            'SELECT * FROM study_activities WHERE id = ?',
-            [req.params.id]
-        );
+        const activity = await db.asyncGet(`
+            SELECT 
+                id,
+                name as title,
+                description,
+                thumbnail_url as preview_url,
+                launch_url
+            FROM study_activities 
+            WHERE id = ?
+        `, [req.params.id]);
+        
         if (!activity) {
             return res.status(404).json({ error: 'Activity not found' });
         }
@@ -72,13 +79,16 @@ router.get('/:id/sessions', async (req, res) => {
         const sessions = await db.asyncAll(`
             SELECT 
                 ss.id,
-                ss.created_at,
-                ss.group_id,
                 g.name as group_name,
-                COUNT(wri.id) as review_count,
-                SUM(CASE WHEN wri.correct THEN 1 ELSE 0 END) as correct_count
+                ss.group_id,
+                ss.study_activity_id as activity_id,
+                sa.name as activity_name,
+                ss.created_at as start_time,
+                ss.created_at as end_time,
+                COUNT(wri.id) as review_items_count
             FROM study_sessions ss
             JOIN groups g ON ss.group_id = g.id
+            JOIN study_activities sa ON ss.study_activity_id = sa.id
             LEFT JOIN word_review_items wri ON ss.id = wri.study_session_id
             WHERE ss.study_activity_id = ?
             GROUP BY ss.id
