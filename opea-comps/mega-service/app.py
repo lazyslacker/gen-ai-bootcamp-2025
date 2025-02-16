@@ -96,8 +96,18 @@ class ExampleService:
             if not response_text:
                 done_reason = llm_response.get('done_reason', 'unknown')
                 response_text = f"No response generated (reason: {done_reason})"
+
+            # Calculate usage from Ollama metrics
+            prompt_eval_count = llm_response.get('prompt_eval_count', 0)
+            eval_count = llm_response.get('eval_count', 0)
+            usage = UsageInfo(
+                prompt_tokens=prompt_eval_count,
+                completion_tokens=eval_count,
+                total_tokens=prompt_eval_count + eval_count
+            )
         else:
             response_text = str(result_dict)
+            usage = UsageInfo()
 
         # Format response in ChatCompletion format
         choices = [
@@ -111,7 +121,7 @@ class ExampleService:
         return ChatCompletionResponse(
             model="llama3.2:1b",
             choices=choices,
-            usage=UsageInfo()
+            usage=usage
         )
 
     def start(self):
