@@ -63,7 +63,7 @@ class ExampleService:
             model="llama3.2:1b",
             max_tokens=1024,
             temperature=0.01,
-            stream=False
+            stream=True
         )
 
         # Forward to LLM service
@@ -71,7 +71,7 @@ class ExampleService:
             initial_inputs={
                 "model": "llama3.2:1b",
                 "prompt": prompt,
-                "stream": False,
+                "stream": True,
                 "options": {
                     "temperature": 0.01,
                     "max_tokens": 1024
@@ -80,7 +80,11 @@ class ExampleService:
             llm_parameters=parameters
         )
 
-        # Get response from LLM - handle different response formats
+        # Handle streaming response
+        if isinstance(result_dict, dict) and isinstance(result_dict.get('llm/MicroService'), StreamingResponse):
+            return result_dict['llm/MicroService']
+        
+        # Non-streaming response handling (fallback)
         if isinstance(result_dict, dict):
             print(f"Result dict: {result_dict}")
             
