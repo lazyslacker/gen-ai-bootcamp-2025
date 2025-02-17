@@ -32,7 +32,7 @@ def align_inputs(self, inputs, cur_node, runtime_graph, llm_parameters_dict, **k
     if self.services[cur_node].name == "llm_response_sentiment/MicroService" and hasattr(self, 'context') and self.context:
         next_inputs = {}
         next_inputs["model"] = "llama3.2:1b"
-        next_inputs["prompt"] = "Summarize the sentiment of the following text in one sentence: " + self.context
+        next_inputs["prompt"] = "In one sentence, whats the sentiment of the following text: " + self.context
         next_inputs["stream"] = inputs["stream"]
         inputs = next_inputs
 
