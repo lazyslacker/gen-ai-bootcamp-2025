@@ -9,6 +9,35 @@ import logging
 import dotenv
 import random
 
+# Define global CSS
+custom_css = """
+<style>
+/* Apply font to all elements */
+* {
+    font-family: 'Noto Sans', 'Arial', sans-serif !important;
+}
+
+/* Specific styles for the large font display */
+.large-font textarea {
+    font-size: 80pt !important;
+    font-weight: bold;
+    padding: auto;
+    min-height: auto;
+    text-align: center !important;
+    margin: auto;
+    line-height: 1.2 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    vertical-align: middle !important;
+}
+
+.word-info {
+    margin-top: auto !important;
+}
+</style>
+"""
+
 dotenv.load_dotenv()
 
 # Setup logging
@@ -234,29 +263,7 @@ class JapaneseWritingApp:
             )
 
     def create_interface(self):
-        with gr.Blocks(title="Japanese Writing Practice") as interface:
-            
-            # Inject custom CSS
-            gr.HTML("""
-            <style>
-                .large-font textarea {
-                    font-size: 80pt !important;
-                    font-weight: bold;
-                    padding: 20px !important;
-                    min-height: 120px !important;  /* Increased for better vertical centering */
-                    text-align: center !important;
-                    margin: 10px 0 !important;
-                    line-height: 1.2 !important;
-                    display: flex !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                    vertical-align: middle !important;
-                }
-                .word-info {
-                    margin-top: 10px !important;
-                }
-            </style>
-            """)
+        with gr.Blocks(title="Japanese Writing Practice", css=custom_css) as interface:
             with gr.Row():
                 # Left Column
                 with gr.Column(scale=1):
@@ -269,7 +276,7 @@ class JapaneseWritingApp:
                             interactive=False,
                             elem_classes=["large-font"],
                             container=False,
-                            lines=2,
+                            lines=1,
                             scale=2
                         )
                     
