@@ -7,14 +7,13 @@ Fetch from the GET localhost:5000/api/groups/:id/raw, this will return a collect
 
 ## Page States
 
-Page states describes the state the single page application should behaviour from a user's perspective. 
+Page states describes the state the single page application should behaviour from a user's perspective.
 
 ### Setup State
 
 When a user first's start up the app.
-They will only see a button called "Generate Sentence"
-When they press the button, The app will generate a sentence using
-the Sentence Genreator LLM, and the state will move to Practice State
+They will only see a button called "Practice Word"
+When they press the button, The app will select a random word from the collection of words, and the state will move to Practice State
 
 ### Practice State
 

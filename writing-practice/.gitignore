@@ -4,3 +4,4 @@ env
 *.pyd
 *.pyw
 *.pyz
+app.log
