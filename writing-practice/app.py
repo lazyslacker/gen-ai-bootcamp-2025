@@ -17,6 +17,16 @@ custom_css = """
     font-family: 'Noto Sans', 'Arial', sans-serif !important;
 }
 
+/* App title styles */
+.app-title {
+    font-size: 36pt !important;
+    font-weight: bold !important;
+    text-align: left !important;
+    margin: 20px 0 30px 0 !important;
+    padding: 0 !important;
+    color: #ffffff !important;
+}
+
 /* Specific styles for the large font display */
 .large-font textarea {
     font-size: 80pt !important;
@@ -264,6 +274,8 @@ class JapaneseWritingApp:
 
     def create_interface(self):
         with gr.Blocks(title="Japanese Writing Practice", css=custom_css) as interface:
+            gr.HTML('<div class="app-title">Japanese Writing Practice</div>')
+            
             with gr.Row():
                 # Left Column
                 with gr.Column(scale=1):
