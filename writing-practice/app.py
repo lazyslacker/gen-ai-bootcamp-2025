@@ -20,7 +20,7 @@ class JapaneseWritingApp:
     def fetch_words(self):
         try:
             # Fetch words from API
-            response = requests.get("http://localhost:5000/api/groups/:id/raw")
+            response = requests.get("http://localhost:3000/api/groups/1/raw")
             self.word_collection = response.json()
         except:
             # For testing, use dummy data if API is not available
@@ -52,29 +52,56 @@ class JapaneseWritingApp:
             generate_btn: gr.update(visible=False),
             submit_btn: gr.update(visible=True),
             next_btn: gr.update(visible=False),
-            transcription: gr.update(value="", visible=True),
-            translation: gr.update(value="", visible=True),
-            grade: gr.update(value="", visible=True),
-            feedback: gr.update(value="", visible=True)
+            transcription: gr.update(value="", visible=False),
+            translation: gr.update(value="", visible=False),
+            grade: gr.update(value="", visible=False),
+            feedback: gr.update(value="", visible=False)
         }
 
     def submit_for_review(self, image):
-        if image is None:
-            return gr.Warning("Please upload an image first!")
+        try:
+            if image is None:
+                return (
+                    gr.update(value="", visible=False),  # transcription
+                    gr.update(value="", visible=False),  # translation
+                    gr.update(value="", visible=False),  # grade
+                    gr.update(value="Error: Please upload an image first!", visible=True),  # feedback
+                    gr.update(visible=True),  # image_upload
+                    gr.update(visible=True),  # submit_btn
+                    gr.update(visible=False)  # next_btn
+            )
         
-        # TODO: Implement actual grading system call
-        return {
-            "transcription": gr.update(value="猫が牛乳を飲みます。"),
-            "translation": gr.update(value="The cat drinks milk."),
-            "grade": gr.update(value="S"),
-            "feedback": gr.update(value="Excellent work! The sentence matches the English perfectly."),
-            "image_upload": gr.update(visible=True),
-            "submit_btn": gr.update(visible=False),
-            "next_btn": gr.update(visible=True)
-        }
-
+            # Simulate processing
+            return (
+                gr.update(value="猫が牛乳を飲みます。", visible=True),  # transcription
+                gr.update(value="The cat drinks milk.", visible=True),  # translation
+                gr.update(value="S", visible=True),  # grade
+                gr.update(value="Excellent work! The sentence matches the English perfectly.", visible=True),  # feedback
+                gr.update(visible=True),  # image_upload
+                gr.update(visible=False),  # submit_btn
+                gr.update(visible=True)  # next_btn
+            )
+        except Exception as e:
+            return (
+                gr.update(value="", visible=False),  # transcription
+                gr.update(value="", visible=False),  # translation
+                gr.update(value="", visible=False),  # grade
+                gr.update(value=f"Error: {str(e)}", visible=True),  # feedback
+                gr.update(visible=True),  # image_upload
+                gr.update(visible=True),  # submit_btn
+                gr.update(visible=False)  # next_btn
+        )
     def create_interface(self):
         with gr.Blocks(title="Japanese Writing Practice") as interface:
+            
+            # Inject custom CSS
+            gr.HTML("""
+            <style>
+                .large-font {
+                    font-size: 24px;  /* Adjust the font size as needed */
+                }
+            </style>
+            """)
             with gr.Row():
                 # Left Column
                 with gr.Column(scale=1):
@@ -84,7 +111,8 @@ class JapaneseWritingApp:
                         sentence_output = gr.Textbox(
                             value="",
                             label="Generated Sentence",
-                            interactive=False
+                            interactive=False,
+                            elem_classes=["large-font"]  # Apply the custom CSS class
                         )
                     
                     with gr.Group():
@@ -97,16 +125,17 @@ class JapaneseWritingApp:
                     with gr.Group():
                         image_upload = gr.Image(
                             label="Upload your handwritten sentence",
-                            type="filepath"
+                            type="filepath",
+                            sources=['upload']
                         )
                         submit_btn = gr.Button("Submit", variant="secondary")
                         next_btn = gr.Button("Next Question", visible=False)
 
                     with gr.Group():
-                        transcription = gr.Textbox(label="Transcription", interactive=False)
-                        translation = gr.Textbox(label="Translation", interactive=False)
-                        grade = gr.Textbox(label="Grade", interactive=False)
-                        feedback = gr.Textbox(label="Feedback", interactive=False)
+                        transcription = gr.Textbox(label="Transcription", interactive=False, visible=False)
+                        translation = gr.Textbox(label="Translation", interactive=False, visible=False)
+                        grade = gr.Textbox(label="Grade", interactive=False, visible=False)
+                        feedback = gr.Textbox(label="Feedback", interactive=False, visible=False)
             
             # Event handlers
             generate_btn.click(
