@@ -182,20 +182,22 @@ router.get('/:id', validate(rules.getGroup), async (req, res) => {
 router.get('/:id/words', validate(rules.getGroupWords), async (req, res) => {
     try {
 
-        const sortBy = req.query.sort_by || 'default_column'; // Default column if not provided
-        const sortOrder = req.query.order || 'asc'; // Default to ascending order
+        sortBy = req.query.sort_by;
+        sortOrder = req.query.order;
 
         const validSortColumns = ['id', 'kanji', 'romaji', 'english']; // List of valid columns
         const validSortOrders = ['asc', 'desc']; // Valid sort orders
 
         // Validate sort column
         if (!validSortColumns.includes(sortBy)) {
-            return res.status(400).json({ error: 'Invalid sort column' });
+            sortBy = 'id'
+            // return res.status(400).json({ error: 'Invalid sort column' });
         }
 
         // Validate sort order
         if (!validSortOrders.includes(sortOrder)) {
-            return res.status(400).json({ error: 'Invalid sort order' });
+            sortOrder = 'asc'
+            // return res.status(400).json({ error: 'Invalid sort order' });
         }
 
         const words = await db.asyncAll(`
