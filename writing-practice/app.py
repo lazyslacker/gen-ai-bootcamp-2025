@@ -3,6 +3,7 @@ import requests
 import json
 from enum import Enum
 from openai import OpenAI
+from manga_ocr import MangaOcr
 import os
 import logging
 import dotenv
@@ -27,16 +28,19 @@ class AppState(Enum):
 
 class JapaneseWritingApp:
     def __init__(self):
+        self.client = OpenAI()
         self.current_state = AppState.SETUP
         self.current_word = None
         self.word_collection = []
+        self.mocr = MangaOcr()  # Initialize MangaOCR
         self.fetch_words()
     
     def fetch_words(self):
         try:
             # Fetch words from API
-            group_id = os.getenv('WORDS_GROUP_ID', '1')
-            url = f"http://localhost:3000/api/groups/{group_id}/words/"
+            words_group_id = os.getenv('WORDS_GROUP_ID', '1')
+            api_url = os.getenv('LANGPORTAL_API_URL', 'http://localhost:3000')
+            url = f"{api_url}/api/groups/{words_group_id}/words/"
             logger.debug(f"Fetching words from {url}")
 
             response = requests.get(url)
@@ -121,6 +125,52 @@ class JapaneseWritingApp:
                 feedback: gr.update(value=f"Error: {str(e)}", visible=True)
             }
 
+    def translate_japanese_text(self, japanese_text):
+        try:
+            response = self.client.chat.completions.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": "You are a Japanese translator. Provide only the English translation of the Japanese text, nothing else."},
+                    {"role": "user", "content": f"Translate this Japanese text to English: {japanese_text}"}
+                ],
+                temperature=0
+            )
+            translation = response.choices[0].message.content.strip()
+            logger.info(f"Translated '{japanese_text}' to '{translation}'")
+            return translation
+        except Exception as e:
+            logger.error(f"Translation error: {str(e)}")
+            raise
+
+    def grade_submission(self, expected_word, transcribed_text, transcribed_translation):
+        try:
+            response = self.client.chat.completions.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": """You are a Japanese writing evaluator. 
+                    Grade the submission using these criteria:
+                    - S rank: Perfect match in both writing and meaning
+                    - A rank: Correct meaning but minor writing differences
+                    - B rank: Recognizable but with significant writing differences
+                    - C rank: Incorrect or unrecognizable
+                    
+                    Provide your response in this format:
+                    {"grade": "rank_letter", "feedback": "detailed_feedback"}"""},
+                    {"role": "user", "content": f"""Evaluate this Japanese writing submission:
+                    Expected word: {expected_word}
+                    Written text: {transcribed_text}
+                    Translation of written text: {transcribed_translation}"""}
+                ],
+                temperature=0
+            )
+            
+            evaluation = json.loads(response.choices[0].message.content)
+            logger.info(f"Grading result: {evaluation}")
+            return evaluation
+        except Exception as e:
+            logger.error(f"Grading error: {str(e)}")
+            raise
+
     def submit_for_review(self, image):
         try:
             if image is None:
@@ -132,52 +182,78 @@ class JapaneseWritingApp:
                     gr.update(visible=True),  # image_upload
                     gr.update(visible=True),  # submit_btn
                     gr.update(visible=False)  # next_btn
+                )
+
+            # Process image with MangaOCR
+            logger.debug(f"Processing image with MangaOCR: {image}")
+            try:
+                transcribed_text = self.mocr(image['composite'])
+                logger.info(f"MangaOCR transcription: {transcribed_text}")
+            except Exception as e:
+                logger.error(f"MangaOCR error: {str(e)}")
+                return (
+                    gr.update(value="", visible=False),
+                    gr.update(value="", visible=False),
+                    gr.update(value="", visible=False),
+                    gr.update(value=f"Error processing image: {str(e)}", visible=True),
+                    gr.update(visible=True),
+                    gr.update(visible=True),
+                    gr.update(visible=False)
+                )
+
+            # Get translation of transcribed text
+            transcribed_translation = self.translate_japanese_text(transcribed_text)
+            
+            # Grade the submission
+            evaluation = self.grade_submission(
+                self.current_word['kanji'],
+                transcribed_text,
+                transcribed_translation
             )
-        
-            # Simulate processing
+
             return (
-                gr.update(value="猫が牛乳を飲みます。", visible=True),  # transcription
-                gr.update(value="The cat drinks milk.", visible=True),  # translation
-                gr.update(value="S", visible=True),  # grade
-                gr.update(value="Excellent work! The word matches the kanji perfectly.", visible=True),  # feedback
+                gr.update(value=transcribed_text, visible=True),  # transcription
+                gr.update(value=transcribed_translation, visible=True),  # translation
+                gr.update(value=evaluation['grade'], visible=True),  # grade
+                gr.update(value=evaluation['feedback'], visible=True),  # feedback
                 gr.update(visible=True),  # image_upload
                 gr.update(visible=False),  # submit_btn
                 gr.update(visible=True)  # next_btn
             )
+
         except Exception as e:
+            logger.error(f"Error in submit_for_review: {str(e)}")
             return (
-                gr.update(value="", visible=False),  # transcription
-                gr.update(value="", visible=False),  # translation
-                gr.update(value="", visible=False),  # grade
-                gr.update(value=f"Error: {str(e)}", visible=True),  # feedback
-                gr.update(visible=True),  # image_upload
-                gr.update(visible=True),  # submit_btn
-                gr.update(visible=False)  # next_btn
-        )
+                gr.update(value="", visible=False),
+                gr.update(value="", visible=False),
+                gr.update(value="", visible=False),
+                gr.update(value=f"Error: {str(e)}", visible=True),
+                gr.update(visible=True),
+                gr.update(visible=True),
+                gr.update(visible=False)
+            )
+
     def create_interface(self):
         with gr.Blocks(title="Japanese Writing Practice") as interface:
             
             # Inject custom CSS
             gr.HTML("""
             <style>
-                .large-font textarea{
-                    font-size: 48pt !important;
-                    font-weight: bold;
-                    padding: 30px !important;
-                    min-height: 60px !important;
-                    text-align: center !important;
-                    margin: 30px 0 !important;
-                    line-height: 1.2 !important;
-                }
-                
-                .word-info {
-                    margin-top: 30px !important;
-                }
-
                 .large-font textarea {
-                    font-size: 48pt !important;
+                    font-size: 80pt !important;
                     font-weight: bold;
+                    padding: 20px !important;
+                    min-height: 120px !important;  /* Increased for better vertical centering */
+                    text-align: center !important;
+                    margin: 10px 0 !important;
                     line-height: 1.2 !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    vertical-align: middle !important;
+                }
+                .word-info {
+                    margin-top: 10px !important;
                 }
             </style>
             """)
