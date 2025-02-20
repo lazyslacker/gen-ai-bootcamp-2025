@@ -3,6 +3,8 @@ import requests
 import json
 from enum import Enum
 from openai import OpenAI
+from google import genai
+from google.genai import types
 from manga_ocr import MangaOcr
 import os
 import logging
@@ -68,6 +70,7 @@ class AppState(Enum):
 class JapaneseWritingApp:
     def __init__(self):
         self.client = OpenAI()
+        self.gemini_client = genai.Client(api_key=os.getenv('GEMINI_API_KEY'))
         self.current_state = AppState.SETUP
         self.current_word = None
         self.word_collection = []
@@ -166,15 +169,32 @@ class JapaneseWritingApp:
 
     def translate_japanese_text(self, japanese_text):
         try:
-            response = self.client.chat.completions.create(
-                model="gpt-4",
-                messages=[
-                    {"role": "system", "content": "You are a Japanese translator. Provide only the English translation of the Japanese text, nothing else."},
-                    {"role": "user", "content": f"Translate this Japanese text to English: {japanese_text}"}
-                ],
-                temperature=0
-            )
-            translation = response.choices[0].message.content.strip()
+
+            messages=[
+                {"role": "system", "content": "You are a Japanese translator. Provide only the English translation of the Japanese text, nothing else."},
+                {"role": "user", "content": f"Translate this Japanese text to English: {japanese_text}"}
+            ]
+            if self.gemini_client:
+
+                logger.debug(f"Using Google Gemini API for translation")
+
+                response = self.gemini_client.models.generate_content(
+                    model="gemini-2.0-flash", 
+                    contents=messages[0]["content"] + messages[1]["content"],
+                    config=types.GenerateContentConfig(
+                            temperature=0
+                    )
+                )
+
+                translation = response.text
+            else:    
+                response = self.client.chat.completions.create(
+                    model="gpt-4",
+                    messages=messages,
+                    temperature=0
+                )
+            
+                translation = response.choices[0].message.content.strip()
             logger.info(f"Translated '{japanese_text}' to '{translation}'")
             return translation
         except Exception as e:
@@ -182,10 +202,9 @@ class JapaneseWritingApp:
             raise
 
     def grade_submission(self, expected_word, transcribed_text, transcribed_translation):
+
         try:
-            response = self.client.chat.completions.create(
-                model="gpt-4",
-                messages=[
+            messages=[
                     {"role": "system", "content": """You are a Japanese writing evaluator. 
                     Grade the submission using these criteria:
                     - S rank: Perfect match in both writing and meaning
@@ -199,11 +218,30 @@ class JapaneseWritingApp:
                     Expected word: {expected_word}
                     Written text: {transcribed_text}
                     Translation of written text: {transcribed_translation}"""}
-                ],
-                temperature=0
-            )
+            ]
+
+            if self.gemini_client:
+
+                logger.debug(f"Using Google Gemini API for grading")
+
+                response = self.gemini_client.models.generate_content(
+                    model="gemini-2.0-flash", 
+                    contents=messages[0]["content"] + messages[1]["content"],
+                    config=types.GenerateContentConfig(
+                            temperature=0
+                    )
+                )
+                evaluation = json.loads(response.text)
+
+            else: 
+                response = self.client.chat.completions.create(
+                    model="gpt-4",
+                    messages=messages,
+                    temperature=0
+                )
             
-            evaluation = json.loads(response.choices[0].message.content)
+                evaluation = json.loads(response.choices[0].message.content)
+
             logger.info(f"Grading result: {evaluation}")
             return evaluation
         except Exception as e:
