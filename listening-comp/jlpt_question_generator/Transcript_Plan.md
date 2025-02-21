@@ -30,7 +30,12 @@ This plan outlines the steps to create a Python program that:
 - [ ] **Parse Transcript Using Amazon Bedrock’s Nano Model**
   - Write a function (e.g., `parse_transcript(transcript_text)`) that:
     - Sends the transcript text to the Nano model endpoint via an HTTP request.
-    - Includes a prompt instructing the model to generate a list of questions, each with four options and one correct answer.
+    - Includes a prompt instructing the model to generate a list of questions with the following for each question:
+      - Introduction
+      - Conversation
+      - Question
+      - 4 possible answers (A, B, C, D) in Japanese
+      - Correct Answer
     - Parses the JSON response into a Python data structure.
   - *Note*: Ensure proper error handling for API responses.
 

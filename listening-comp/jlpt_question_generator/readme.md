@@ -24,7 +24,11 @@ python jlpt_question_generator.py <youtube_video_id> <output_file>
 
 Example:
 ```bash
-python jlpt_question_generator.py EngW7tLk6R8 questions.txt
+python jlpt_question_generator.py 0e0duD8_LFE questions.txt
+```
+
+```bash
+python jlpt_question_generator.py CQ82yk3BC6c questions.txt
 ```
 
 2. Run tests:

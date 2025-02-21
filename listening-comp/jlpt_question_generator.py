@@ -24,28 +24,12 @@ class JLPTQuestionGenerator:
         Returns:
             str: The concatenated transcript text
         """
-
-        transcript_file = f"downloads/{video_id}_transcript.txt"
-    
-        # Check if the transcript file already exists
-        if os.path.exists(transcript_file):
-            with open(transcript_file, 'r', encoding='utf-8') as file:
-                transcript_text = file.read()
-                print(f"Transcript loaded from {transcript_file}")
-                return transcript_text
         try:
             transcript_list = YouTubeTranscriptApi.get_transcript(
                 video_id, 
                 languages=['ja']
             )
-            transcript_text = " ".join([entry['text'] for entry in transcript_list])
-        
-            # Save the transcript to a file
-            with open(transcript_file, 'w', encoding='utf-8') as file:
-                file.write(transcript_text)
-                print(f"Transcript saved to {transcript_file}")
-        
-            return transcript_text
+            return " ".join([entry['text'] for entry in transcript_list])
         except Exception as e:
             raise Exception(f"Error downloading transcript: {str(e)}")
 
@@ -61,28 +45,15 @@ class JLPTQuestionGenerator:
         """
         prompt = f"""
         Based on the following Japanese transcript, generate 5 JLPT N5 level listening comprehension questions.
-        Format the output as follows.
-        Question 1
-        
-        Introduction:
-        [Introduction Text]
-
-        Conversation:
-        [Conversation Text]
-
-        Question:
-        [Question Text]
-
-        4 possible answers (A, B, C, D) in Japanese
-
-        Correct Answer
+        For each question:
+        1. Create a question in Japanese
+        2. Provide 4 possible answers (A, B, C, D) in Japanese
+        3. Indicate the correct answer
         
         Format the output as a JSON array of objects with the following structure:
         [
             {{
-                "introduction": "Introduction Text",
-                "conversation": "Conversation Text",
-                "question": "Question Text",
+                "question": "質問文",
                 "options": ["選択肢A", "選択肢B", "選択肢C", "選択肢D"],
                 "answer": "A"
             }}
@@ -94,33 +65,17 @@ class JLPTQuestionGenerator:
 
         try:
             response = self.bedrock.invoke_model(
-                modelId="amazon.nova-lite-v1:0",
+                modelId="anthropic.claude-v2",
                 body=json.dumps({
-                    "inferenceConfig": {
-                        "max_new_tokens": 1000
-                        },
-                    "messages": [
-                        {
-                            "role": "user",
-                            "content": [
-                                {"text": prompt}  # Ensure 'content' is a list of dictionaries
-                            ]
-                        }
-                    ]
+                    "prompt": prompt,
+                    "max_tokens_to_sample": 2000,
+                    "temperature": 0.7
                 })
             )
+            
             response_body = json.loads(response['body'].read())
-            print(response_body)
-            # Access the nested content
-            content_text = response_body['output']['message']['content'][0]['text']
-            # Remove the code block markers if present
-            content_text = content_text.strip("```json\n").strip("\n```")
-            questions = json.loads(content_text)
+            questions = json.loads(response_body['completion'])
             return questions
-        except KeyError as e:
-            raise Exception(f"KeyError: Missing key in response: {str(e)}")
-        except json.JSONDecodeError as e:
-            raise Exception(f"JSONDecodeError: Error decoding JSON: {str(e)}")
         except Exception as e:
             raise Exception(f"Error parsing transcript with Bedrock: {str(e)}")
 
@@ -133,12 +88,9 @@ class JLPTQuestionGenerator:
             file_path (str): Path to save the output file
         """
         try:
-            file_path = f"transcripts/" + file_path
             with open(file_path, 'w', encoding='utf-8') as f:
                 for i, q in enumerate(questions, 1):
                     f.write(f"問題{i}. {q['question']}\n\n")
-                    f.write(f"導入: {q['introduction']}\n\n")
-                    f.write(f"会話: {q['conversation']}\n\n")
                     for j, option in enumerate(q['options']):
                         f.write(f"{chr(65+j)}. {option}\n")
                     f.write(f"\n正解: {q['answer']}\n\n")
