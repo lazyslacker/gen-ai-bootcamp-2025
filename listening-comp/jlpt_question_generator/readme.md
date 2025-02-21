@@ -5,11 +5,13 @@ This tool generates JLPT N5 level listening comprehension questions from Japanes
 ## Setup
 
 1. Install dependencies:
+
 ```bash
 pip install -r requirements.txt
 ```
 
 2. Set up environment variables in `.env`:
+
 ```
 AWS_ACCESS_KEY_ID=your_access_key
 AWS_SECRET_ACCESS_KEY=your_secret_key
@@ -18,11 +20,13 @@ AWS_SECRET_ACCESS_KEY=your_secret_key
 ## Usage
 
 1. Run the question generator:
+
 ```bash
 python jlpt_question_generator.py <youtube_video_id> <output_file>
 ```
 
 Example:
+
 ```bash
 python jlpt_question_generator.py 0e0duD8_LFE questions.txt
 ```
@@ -31,7 +35,14 @@ python jlpt_question_generator.py 0e0duD8_LFE questions.txt
 python jlpt_question_generator.py CQ82yk3BC6c questions.txt
 ```
 
+```bash
+python jlpt_question_generator.py SAaWBv630nI questions.txt
+```
+
 2. Run tests:
+
+Tests are probably broken, dont run this file for now
+
 ```bash
 pytest test_jlpt_question_generator.py
 ```
