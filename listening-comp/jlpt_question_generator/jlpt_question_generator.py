@@ -65,17 +65,33 @@ class JLPTQuestionGenerator:
 
         try:
             response = self.bedrock.invoke_model(
-                modelId="anthropic.claude-v2",
+                modelId="amazon.nova-lite-v1:0",
                 body=json.dumps({
-                    "prompt": prompt,
-                    "max_tokens_to_sample": 2000,
-                    "temperature": 0.7
+                    "inferenceConfig": {
+                        "max_new_tokens": 1000
+                        },
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": [
+                                {"text": prompt}  # Ensure 'content' is a list of dictionaries
+                            ]
+                        }
+                    ]
                 })
             )
-            
             response_body = json.loads(response['body'].read())
-            questions = json.loads(response_body['completion'])
+            print(response_body)
+            # Access the nested content
+            content_text = response_body['output']['message']['content'][0]['text']
+            # Remove the code block markers if present
+            content_text = content_text.strip("```json\n").strip("\n```")
+            questions = json.loads(content_text)
             return questions
+        except KeyError as e:
+            raise Exception(f"KeyError: Missing key in response: {str(e)}")
+        except json.JSONDecodeError as e:
+            raise Exception(f"JSONDecodeError: Error decoding JSON: {str(e)}")
         except Exception as e:
             raise Exception(f"Error parsing transcript with Bedrock: {str(e)}")
 
