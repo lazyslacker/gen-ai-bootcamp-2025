@@ -4,9 +4,17 @@
 
 The listening comprehension app is a tool that helps users improve their listening skills by providing a platform to practice listening comprehension.
 
-This app is aimed at building listening comprehension skilsl for spoken Japanese, at the JLPT N5 level.
+This app is aimed at building listening comprehension skills for spoken Japanese, at the JLPT N5 level.
 
 ## Core functionalities
+
+On startup, the app shall connect to a vector database located in a folder called "vectordb".
+
+The app shall allow the user to type a one-word topic into a text box, or select 'Random topic'.
+
+Depending on the user's selection, the app shall query the vector database for a question and answer choice that most closely matches the selected topic.
+
+The app shall then 
 
 The app will present an audio clip in Japanese to the user.
 
