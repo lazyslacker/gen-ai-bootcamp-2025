@@ -174,7 +174,7 @@ D. {entry['answers']['D']}"""
         # Verify collection size
         print(f"Total documents in collection: {self.collection.count()}")
 
-    def query_database(self, query: str, n_results: int = 20):
+    def query_database(self, query: str, n_results: int = 3):
         """Query the vector database and return similar questions."""
         try:
             query_embedding = self.get_embedding(query)
