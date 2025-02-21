@@ -136,9 +136,9 @@ class JLPTQuestionGenerator:
             file_path = f"transcripts/" + file_path
             with open(file_path, 'w', encoding='utf-8') as f:
                 for i, q in enumerate(questions, 1):
-                    f.write(f"問題{i}. {q['question']}\n\n")
                     f.write(f"導入: {q['introduction']}\n\n")
                     f.write(f"会話: {q['conversation']}\n\n")
+                    f.write(f"問題{i}. {q['question']}\n\n")
                     for j, option in enumerate(q['options']):
                         f.write(f"{chr(65+j)}. {option}\n")
                     f.write(f"\n正解: {q['answer']}\n\n")
