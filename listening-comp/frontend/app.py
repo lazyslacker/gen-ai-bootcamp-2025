@@ -119,6 +119,11 @@ st.markdown("""
     border-color: #0068c9;
     color: black;
 }
+
+.topic-label {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -139,29 +144,27 @@ with col1:
 with col2:
     st.title("Japanese Listening Comprehension")
     
-    # Topic selection
-    col_topic, col_random = st.columns([3, 1])
+    # Topic input label with larger text
+    st.markdown('<p class="topic-label">Enter a topic (in Japanese):</p>', unsafe_allow_html=True)
     
-    with col_topic:
-        # Get the current topic and its reading if it exists in SAMPLE_TOPICS
-        current_topic = st.session_state.get('topic', "日本の伝統文化について")
-        display_text = f"{current_topic} ({SAMPLE_TOPICS.get(current_topic, '')})" if current_topic in SAMPLE_TOPICS else current_topic
-        topic = st.text_input("Enter a topic (in Japanese):", display_text)
+    # Topic input field
+    current_topic = st.session_state.get('topic', "日本の伝統文化について")
+    display_text = f"{current_topic} ({SAMPLE_TOPICS.get(current_topic, '')})" if current_topic in SAMPLE_TOPICS else current_topic
+    topic = st.text_input("Topic Input Field", value=display_text, label_visibility="collapsed")
     
-    with col_random:
-        if st.button("Random Topic"):
-            # Select a random key from the dictionary
-            topic = random.choice(list(SAMPLE_TOPICS.keys()))
-            # Use session state to update the text input
-            st.session_state.topic = topic
-            # Use st.rerun() instead of st.experimental_rerun()
-            st.rerun()
+    # Random Topic and Get New Question buttons
+    if st.button("Random Topic", use_container_width=True):
+        # Select a random key from the dictionary
+        topic = random.choice(list(SAMPLE_TOPICS.keys()))
+        # Use session state to update the text input
+        st.session_state.topic = topic
+        st.rerun()
     
     # Update topic from session state if it exists
     if 'topic' in st.session_state:
         topic = st.session_state.topic
     
-    if st.button("Get New Question"):
+    if st.button("Get New Question", use_container_width=True):
         try:
             response = requests.post(
                 "http://0.0.0.0:8000/api/search",
@@ -208,6 +211,7 @@ with col2:
         with col1_ans:
             for key, value in left_answers:
                 button_label = f"{key}: {value}"
+                # First show the button
                 if st.button(
                     button_label,
                     key=f"answer_{key}",
@@ -217,17 +221,20 @@ with col2:
                     st.session_state.selected_answer = key
                     st.rerun()
                 
-                # Show feedback colors using success/error messages
+                # Then show the feedback highlights
                 if st.session_state.feedback_shown:
                     if key == question_data["correct_answer"]:
-                        st.success(button_label)
-                    elif st.session_state.selected_answer == key:
-                        st.error(button_label)
+                        # Always show correct answer in green with checkmark
+                        st.success(f"✓ {button_label} (Correct Answer)")
+                    elif key == st.session_state.selected_answer:
+                        # Show selected wrong answer in red with X
+                        st.error(f"✗ {button_label}")
         
         # Display answers in right column
         with col2_ans:
             for key, value in right_answers:
                 button_label = f"{key}: {value}"
+                # First show the button
                 if st.button(
                     button_label,
                     key=f"answer_{key}",
@@ -237,12 +244,14 @@ with col2:
                     st.session_state.selected_answer = key
                     st.rerun()
                 
-                # Show feedback colors using success/error messages
+                # Then show the feedback highlights
                 if st.session_state.feedback_shown:
                     if key == question_data["correct_answer"]:
-                        st.success(button_label)
-                    elif st.session_state.selected_answer == key:
-                        st.error(button_label)
+                        # Always show correct answer in green with checkmark
+                        st.success(f"✓ {button_label} (Correct Answer)")
+                    elif key == st.session_state.selected_answer:
+                        # Show selected wrong answer in red with X
+                        st.error(f"✗ {button_label}")
         
         # Add some spacing
         st.write("")
