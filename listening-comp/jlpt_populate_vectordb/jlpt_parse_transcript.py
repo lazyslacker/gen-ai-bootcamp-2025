@@ -152,6 +152,14 @@ def main(video_id: str):
     Args:
         video_id (str): YouTube video ID
     """
+    output_file = f"transcript_{video_id}.txt"
+    output_path = f"transcripts/{output_file}"
+    
+    # Check if output file already exists
+    if os.path.exists(output_path):
+        print(f"Output file {output_path} already exists. Skipping processing.")
+        return
+        
     generator = JLPTQuestionGenerator()
     
     print("Downloading transcript...")
@@ -160,7 +168,6 @@ def main(video_id: str):
     print("Generating questions...")
     questions = generator.parse_transcript(transcript)
     
-    output_file = f"transcript_{video_id}.txt"
     print("Saving questions...")
     generator.save_questions(questions, output_file)
     
@@ -169,7 +176,7 @@ def main(video_id: str):
 if __name__ == "__main__":
     import sys
     if len(sys.argv) != 2:
-        print("Usage: python jlpt_question_generator.py <video_id>")
+        print("Usage: python jlpt_parse_transcript.py <video_id>")
         sys.exit(1)
     
     main(sys.argv[1]) 

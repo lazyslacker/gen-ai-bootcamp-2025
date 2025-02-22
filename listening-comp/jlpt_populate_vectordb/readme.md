@@ -19,24 +19,24 @@ AWS_SECRET_ACCESS_KEY=your_secret_key
 
 ## Usage
 
-1. Run the question generator:
+1. Run the transcript parser:
 
 ```bash
-python jlpt_question_generator.py <youtube_video_id> <output_file>
+python jlpt_parse_transcript.py <youtube_video_id>
 ```
 
 Example:
 
 ```bash
-python jlpt_question_generator.py 0e0duD8_LFE questions.txt
+python jlpt_parse_transcript.py 0e0duD8_LFE
 ```
 
 ```bash
-python jlpt_question_generator.py CQ82yk3BC6c questions.txt
+python jlpt_parse_transcript.py CQ82yk3BC6c
 ```
 
 ```bash
-python jlpt_question_generator.py SAaWBv630nI questions.txt
+python jlpt_parse_transcript.py SAaWBv630nI
 ```
 
 2. Run tests:
@@ -44,7 +44,7 @@ python jlpt_question_generator.py SAaWBv630nI questions.txt
 Tests are probably broken, dont run this file for now
 
 ```bash
-pytest test_jlpt_question_generator.py
+pytest test_jlpt_parse_transcript.py
 ```
 
 ## Features
