@@ -39,12 +39,11 @@ python jlpt_parse_transcript.py CQ82yk3BC6c
 python jlpt_parse_transcript.py SAaWBv630nI
 ```
 
-2. Run tests:
+2. Run backend (need this running so that the frontend can access chromadb):
 
-Tests are probably broken, dont run this file for now
 
 ```bash
-pytest test_jlpt_parse_transcript.py
+python listening-comp-backend.py
 ```
 
 ## Features
