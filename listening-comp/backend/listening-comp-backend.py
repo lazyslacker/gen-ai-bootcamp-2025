@@ -10,6 +10,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+import random
 
 # Load environment variables
 load_dotenv()
@@ -112,12 +113,16 @@ class JLPTVectorDB:
     def get_embedding(self, text: str) -> List[float]:
         """Get embeddings directly from Amazon Titan model."""
         try:
+            # Validate input text
+            if not text or not text.strip():
+                raise ValueError("Input text cannot be empty")
+                
             response = self.bedrock.invoke_model(
                 modelId="amazon.titan-embed-text-v1",
                 contentType="application/json",
                 accept="application/json",
                 body=json.dumps({
-                    "inputText": text
+                    "inputText": text.strip()
                 })
             )
             response_body = json.loads(response['body'].read())
@@ -257,11 +262,15 @@ D. {entry['answers']['D']}"""
     def query_database(self, query: str, n_results: int = 3):
         """Query the vector database and return similar questions."""
         try:
-            query_embedding = self.get_embedding(query)
+            # Validate query
+            if not query or not query.strip():
+                raise ValueError("Search query cannot be empty")
+                
+            query_embedding = self.get_embedding(query.strip())
             results = self.collection.query(
                 query_embeddings=[query_embedding],
                 n_results=n_results,
-                include=['metadatas', 'documents']  # Explicitly request metadata
+                include=['metadatas', 'documents']
             )
             
             if not results['metadatas'] or not results['metadatas'][0]:
