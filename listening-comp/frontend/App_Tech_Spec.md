@@ -12,13 +12,9 @@ On startup, the app shall connect to a vector database located in a folder calle
 
 The app shall allow the user to type a one-word topic into a text box, or select 'Random topic'.
 
-Depending on the user's selection, the app shall query the vector database for a question and answer choice that most closely matches the selected topic.
+Depending on the user's selection, the app shall query the vector database for an entry that most closely matches the selected topic.
 
-The app shall then 
-
-The app will present an audio clip in Japanese to the user.
-
-The app will present a question to the user in Japanese language based on the contents of the audio clip.
+The app shall use the vector database query response as an input prompt to amazon.nova-lite-v1:0 LLM to generate a new text consisting of an introduction, conversation, question, and 4 answer choices.
 
 The user shall select the correct answer from a list of 4 options which will  be in Japanese language.
 
@@ -32,3 +28,9 @@ After the app has presented feedback to the user, the user can click anywhere on
 ## Technical details
 
 The app will use Streamlit for the frontend.
+
+The app will use the amazon.nova-lite-v1:0 LLM to generate the text.
+
+The app will use the chromadb vector database located in the folder backend/vectordb to store the questions and answer choices.
+
+The app will use the json file frontend/questions.json to store the questions and answer choices.
