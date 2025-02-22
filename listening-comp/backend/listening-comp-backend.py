@@ -6,9 +6,89 @@ from dotenv import load_dotenv
 import chromadb
 from chromadb.config import Settings
 import boto3
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 
 # Load environment variables
 load_dotenv()
+
+# Initialize FastAPI app
+app = FastAPI(title="JLPT Listening Comprehension API")
+
+class CustomJSONResponse(JSONResponse):
+    def render(self, content) -> bytes:
+        return json.dumps(
+            content,
+            ensure_ascii=False,
+            allow_nan=False,
+            indent=2,
+            separators=(",", ":"),
+        ).encode("utf-8")
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, replace with specific origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Initialize global database instance
+db = None
+
+class QueryRequest(BaseModel):
+    query: str
+    n_results: int = 3
+
+@app.on_event("startup")
+async def startup_event():
+    global db
+    db = JLPTVectorDB()
+    # Populate the database with transcript data
+    transcript_dir = "transcripts"
+    db.populate_database(transcript_dir)
+
+@app.post("/api/search")
+async def search_questions(request: QueryRequest):
+    try:
+        results = db.query_database(request.query, request.n_results)
+        
+        # Format the response
+        formatted_results = []
+        for metadata in results['metadatas'][0]:
+            # Create a copy of metadata to avoid modifying the original
+            result = {
+                "question": metadata.get('question', ''),
+                "correct_answer": metadata.get('correct_answer', ''),
+                "introduction": metadata.get('introduction', ''),
+                "conversation": metadata.get('conversation', ''),
+                "answers": {}
+            }
+            
+            # Handle answers properly
+            try:
+                if isinstance(metadata.get('answers_json'), str):
+                    result['answers'] = json.loads(metadata['answers_json'])
+                elif isinstance(metadata.get('answers_json'), dict):
+                    result['answers'] = metadata['answers_json']
+            except (json.JSONDecodeError, TypeError) as e:
+                print(f"Error parsing answers: {str(e)}")
+                result['answers'] = {}
+            
+            formatted_results.append(result)
+        
+        return CustomJSONResponse({
+            "status": "success",
+            "query": request.query,
+            "count": len(formatted_results),
+            "results": formatted_results
+        })
+    except Exception as e:
+        print(f"Error in search_questions: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 class JLPTVectorDB:
     def __init__(self):
@@ -184,24 +264,9 @@ D. {entry['answers']['D']}"""
                 include=['metadatas', 'documents']  # Explicitly request metadata
             )
             
-            # Debug print
-            print("\nRaw results:", json.dumps(results, ensure_ascii=False, indent=2))
-            
             if not results['metadatas'] or not results['metadatas'][0]:
                 print("Warning: No metadata found in results")
                 return results
-            
-            # Parse the JSON string back to dict for display
-            for metadata in results['metadatas'][0]:
-                if 'answers_json' in metadata:
-                    try:
-                        metadata['answers'] = json.loads(metadata['answers_json'])
-                        del metadata['answers_json']
-                    except json.JSONDecodeError as e:
-                        print(f"Error parsing answers JSON: {e}")
-                        metadata['answers'] = {}
-                else:
-                    print(f"Warning: answers_json not found in metadata: {metadata}")
             
             return results
         except Exception as e:
@@ -209,34 +274,9 @@ D. {entry['answers']['D']}"""
             raise
 
 def main():
-    # Initialize the vector database
-    db = JLPTVectorDB()
-    
-    try:        
-        # Populate the database with transcript data
-        transcript_dir = "transcripts"
-        db.populate_database(transcript_dir)
-        
-        query = input("\nEnter your query, 'quit' to exit, or leave program running so that the frontend can access chromadb: ")
-        if query.lower() == 'quit':
-            raise KeyboardInterrupt
-                    
-        results = db.query_database(query)
-        print("\nTop matching questions:")
-        for i, (doc, metadata) in enumerate(zip(results['documents'][0], results['metadatas'][0]), 1):
-            print(f"\n--- Match {i} ---")
-            print(f"Question: {metadata['question']}")
-            print("Answers:")
-            for key, value in metadata['answers'].items():
-                print(f"{key}. {value}")
-            print(f"Correct Answer: {metadata['correct_answer']}")
-            print("\nContext:")
-            print(f"Introduction: {metadata['introduction']}")
-            print(f"Conversation: {metadata['conversation']}")
-    except KeyboardInterrupt:
-        print("\nProgram interrupted by user. Exiting gracefully...")
-    finally:
-        print("Goodbye!")
+    import uvicorn
+    # Run the FastAPI server
+    uvicorn.run(app, host="0.0.0.0", port=8000)
 
 if __name__ == "__main__":
     main() 
