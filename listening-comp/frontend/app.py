@@ -12,13 +12,29 @@ if 'current_question' not in st.session_state:
     st.session_state.current_question = None
 if 'feedback_shown' not in st.session_state:
     st.session_state.feedback_shown = False
+if 'debug_mode' not in st.session_state:
+    st.session_state.debug_mode = False
+if 'correct_key' not in st.session_state:
+    st.session_state.correct_key = None
 
-def get_correct_answer_key(answers, correct_answer_text):
-    """Helper function to find the key (A, B, C, D) for the correct answer text"""
-    for k, v in answers.items():
-        if v == correct_answer_text:
-            return k
-    return None
+def compute_correct_key(question_data):
+    """Helper function to compute the correct answer key"""
+    try:
+        for k, v in question_data["answers"].items():
+            if v == question_data["correct_answer"]:
+                return k
+        return None
+    except Exception as e:
+        if st.session_state.debug_mode:
+            st.error(f"Error computing correct key: {str(e)}")
+        return None
+
+# def get_correct_answer_key(answers, correct_answer_text):
+#     """Helper function to find the key (A, B, C, D) for the correct answer text"""
+#     for k, v in answers.items():
+#         if v == correct_answer_text:
+#             return k
+#     return None
 
 # Sample topics for random selection
 SAMPLE_TOPICS = {
@@ -146,34 +162,46 @@ with col1:
             st.session_state.current_question = item
             st.session_state.selected_answer = None
             st.session_state.feedback_shown = False
+    
+    # Add debug mode toggle at the bottom of left sidebar
+    st.sidebar.markdown("---")
+    if st.sidebar.checkbox("Show Debug Info", value=st.session_state.debug_mode):
+        st.session_state.debug_mode = True
+    else:
+        st.session_state.debug_mode = False
 
 # Right Sidebar with debug info
-with st.sidebar:
-    st.markdown("---")  # Add a separator
-    st.title("Debug Information")
-    
-    # Show session state variables
-    st.subheader("Session State")
-    st.write("Selected Answer:", st.session_state.selected_answer)
-    st.write("Feedback Shown:", st.session_state.feedback_shown)
-    
-    # Show current question info if available
-    if st.session_state.current_question:
-        st.subheader("Current Question")
-        st.write("Correct Answer:", st.session_state.current_question.get("correct_answer"))
+if st.session_state.debug_mode:
+    with st.sidebar:
+        st.markdown("---")  # Add a separator
+        st.title("Debug Information")
         
-        # Find and show correct key
-        correct_key = None
-        for k, v in st.session_state.current_question["answers"].items():
-            if v == st.session_state.current_question["correct_answer"]:
-                correct_key = k
-                break
-        st.write("Correct Key:", correct_key)
+        # Show session state variables
+        st.subheader("Session State")
+        st.write("Selected Answer:", st.session_state.selected_answer)
+        st.write("Feedback Shown:", st.session_state.feedback_shown)
         
-        # Show all answers
-        st.subheader("Answer Choices")
-        for k, v in st.session_state.current_question["answers"].items():
-            st.write(f"{k}: {v}")
+        # Show current question info if available
+        if st.session_state.current_question:
+            st.subheader("Current Question")
+            st.write("Correct Answer:", st.session_state.current_question.get("correct_answer"))
+            
+            # Find and show correct key
+            correct_key = None
+            for k, v in st.session_state.current_question["answers"].items():
+                if v == st.session_state.current_question["correct_answer"]:
+                    correct_key = k
+                    break
+
+            st.write("Correct Key:", correct_key)
+            
+            # Show all answers
+            st.subheader("Answer Choices")
+            for k, v in st.session_state.current_question["answers"].items():
+                st.write(f"{k}: {v}")
+
+            st.write("Answers:", st.session_state.current_question["answers"].items())
+            st.write("Correct Answer:", correct_key)
 
 # Main content
 with col2:
@@ -204,32 +232,45 @@ with col2:
         st.session_state.topic = topic
     
     if st.button("Get New Question", use_container_width=True):
-        try:
-            # Reset feedback state before getting new question
-            st.session_state.selected_answer = None
-            st.session_state.feedback_shown = False
-            
-            # Ensure we have a valid topic
-            if not topic or topic.strip() == "":
-                topic = "日本の伝統文化について"
-                st.session_state.topic = topic
-            
-            response = requests.post(
-                "http://0.0.0.0:8000/api/search",
-                json={
-                    "query": topic,
-                    "n_results": 1
-                }
-            )
-            if response.status_code == 200:
-                data = response.json()
-                if data["results"]:
-                    # Store new question and reset all related state
-                    st.session_state.current_question = data["results"][0]
-                    save_to_history(data["results"][0])
-                    st.rerun()
-        except requests.exceptions.RequestException as e:
-            st.error(f"Error connecting to the backend: {str(e)}")
+        # Reset feedback state before getting new question
+        st.session_state.selected_answer = None
+        st.session_state.feedback_shown = False
+        st.session_state.correct_key = None
+        
+        # Ensure we have a valid topic
+        if not topic or topic.strip() == "":
+            st.warning("Please enter a topic or click 'Random Topic' first.")
+        else:
+            try:
+                response = requests.post(
+                    "http://0.0.0.0:8000/api/search",
+                    json={
+                        "query": topic,
+                        "n_results": 1
+                    }
+                )
+                if response.status_code == 200:
+                    data = response.json()
+                    if data["results"]:
+                        # Store new question and reset all related state
+                        question_data = data["results"][0]
+                        st.session_state.current_question = question_data
+                        computed_key = compute_correct_key(question_data)
+                        if computed_key is not None:
+                            st.session_state.correct_key = computed_key
+                            save_to_history(question_data)
+                            st.rerun()
+                        else:
+                            st.error("Error: Could not determine correct answer. Please try another question.")
+                    else:
+                        st.warning("No questions found for this topic. Please try another topic.")
+            except requests.exceptions.RequestException as e:
+                st.error(f"Error connecting to the backend: {str(e)}")
+            except Exception as e:
+                if st.session_state.debug_mode:
+                    st.error(f"Unexpected error: {str(e)}")
+                else:
+                    st.error("An unexpected error occurred. Please try again.")
 
     # Display current question
     if st.session_state.current_question:
@@ -246,13 +287,6 @@ with col2:
         
         # Display answer choices
         st.subheader("Answer Choices")
-        
-        # Find the correct answer key by matching the answer text
-        correct_key = None
-        for k, v in question_data["answers"].items():
-            if v == question_data["correct_answer"]:
-                correct_key = k
-                break
         
         # Create columns for answers and feedback
         col_answers, col_feedback = st.columns(2)
@@ -279,7 +313,7 @@ with col2:
                 for key, value in question_data["answers"].items():
                     button_label = f"{key}: {value}"
                     # Always show the correct answer in green
-                    if key == correct_key:
+                    if key == st.session_state.correct_key:
                         st.success(f"✓ {button_label} (Correct Answer)")
                     # Show wrong answer in red only if it was selected
                     elif key == st.session_state.selected_answer:
@@ -295,10 +329,10 @@ with col2:
                 if st.button("Check Answer", type="primary"):
                     st.session_state.feedback_shown = True
                     
-                    if st.session_state.selected_answer == correct_key:
+                    if st.session_state.selected_answer == st.session_state.correct_key:
                         st.success("Correct! 正解です！")
                     else:
-                        st.error(f"Incorrect. The correct answer is: {correct_key}: {question_data['correct_answer']}")
+                        st.error(f"Incorrect. The correct answer is: {st.session_state.correct_key}: {question_data['correct_answer']}")
                     st.rerun()
             
             # Add a "Try Again" button when feedback is shown
