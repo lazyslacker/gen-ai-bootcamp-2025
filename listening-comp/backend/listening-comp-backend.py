@@ -208,39 +208,19 @@ D. {entry['answers']['D']}"""
             print(f"Error in query_database: {str(e)}")
             raise
 
-    def reset_database(self):
-        """Reset the vector database by deleting and recreating the collection."""
-        try:
-            self.client.delete_collection("jlpt_questions")
-            print("Deleted existing collection")
-        except Exception as e:
-            print(f"No existing collection to delete: {str(e)}")
-        
-        self.collection = self.client.create_collection(
-            name="jlpt_questions",
-            metadata={"hnsw:space": "cosine"}
-        )
-        print("Created new collection")
-
 def main():
     # Initialize the vector database
     db = JLPTVectorDB()
     
-    # Ask if user wants to reset the database
-    reset = input("Do you want to reset the database? (yes/no): ").lower().strip()
-    if reset == 'yes':
-        db.reset_database()
-    
-    # Populate the database with transcript data
-    transcript_dir = "transcripts"
-    db.populate_database(transcript_dir)
-    
-    # Example query
-    while True:
-        query = input("\nEnter your query (or 'quit' to exit): ")
+    try:        
+        # Populate the database with transcript data
+        transcript_dir = "transcripts"
+        db.populate_database(transcript_dir)
+        
+        query = input("\nEnter your query, 'quit' to exit, or leave program running so that the frontend can access chromadb: ")
         if query.lower() == 'quit':
-            break
-            
+            raise KeyboardInterrupt
+                    
         results = db.query_database(query)
         print("\nTop matching questions:")
         for i, (doc, metadata) in enumerate(zip(results['documents'][0], results['metadatas'][0]), 1):
@@ -253,6 +233,10 @@ def main():
             print("\nContext:")
             print(f"Introduction: {metadata['introduction']}")
             print(f"Conversation: {metadata['conversation']}")
+    except KeyboardInterrupt:
+        print("\nProgram interrupted by user. Exiting gracefully...")
+    finally:
+        print("Goodbye!")
 
 if __name__ == "__main__":
     main() 
