@@ -145,13 +145,12 @@ class JLPTQuestionGenerator:
         except Exception as e:
             raise Exception(f"Error saving questions to file: {str(e)}")
 
-def main(video_id: str, output_file: str):
+def main(video_id: str):
     """
     Main function to orchestrate the question generation process.
     
     Args:
         video_id (str): YouTube video ID
-        output_file (str): Path to save the output file
     """
     generator = JLPTQuestionGenerator()
     
@@ -161,15 +160,16 @@ def main(video_id: str, output_file: str):
     print("Generating questions...")
     questions = generator.parse_transcript(transcript)
     
+    output_file = f"transcript_{video_id}.txt"
     print("Saving questions...")
     generator.save_questions(questions, output_file)
     
-    print(f"Questions have been saved to {output_file}")
+    print(f"Questions have been saved to transcripts/{output_file}")
 
 if __name__ == "__main__":
     import sys
-    if len(sys.argv) != 3:
-        print("Usage: python jlpt_question_generator.py <video_id> <output_file>")
+    if len(sys.argv) != 2:
+        print("Usage: python jlpt_question_generator.py <video_id>")
         sys.exit(1)
     
-    main(sys.argv[1], sys.argv[2]) 
+    main(sys.argv[1]) 
