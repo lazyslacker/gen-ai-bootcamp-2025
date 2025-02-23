@@ -18,20 +18,48 @@ def test_aws_credentials():
     try:
         # Test Polly access first (this is what we need for audio)
         print("Testing Polly access...")
-        polly_response = polly.describe_voices(LanguageCode='ja-JP')
+        polly_response = polly.describe_voices(
+            Engine='neural',  # Specify neural engine
+            LanguageCode='ja-JP'
+        )
         print("Polly access successful")
-        available_voices = [voice['Id'] for voice in polly_response['Voices']]
-        print(f"Available Japanese voices: {available_voices}")
         
-        # Update voice mapping based on available voices
+        # Get only neural voices and their properties
+        neural_voices = []
+        for voice in polly_response['Voices']:
+            if 'SupportedEngines' in voice and 'neural' in voice['SupportedEngines']:
+                neural_voices.append(voice)
+        
+        available_voices = [voice['Id'] for voice in neural_voices]
+        print(f"Available Neural Japanese voices: {available_voices}")
+        
+        # Update voice mapping based on available neural voices
         global VOICE_MAPPING
         VOICE_MAPPING = {
-            'male': [v for v in available_voices if v in ['Takumi', 'Tomoko']],
-            'female': [v for v in available_voices if v in ['Mizuki', 'Kazuha']],
-            'child': [v for v in available_voices if v in ['Mizuki']],
-            'elderly': [v for v in available_voices if v in ['Takumi']]
+            'male': [],
+            'female': [],
+            'child': [],
+            'elderly': []
         }
+        
+        # Categorize voices based on their properties
+        for voice in neural_voices:
+            voice_id = voice['Id']
+            if voice['Gender'] == 'Female':
+                VOICE_MAPPING['female'].append(voice_id)
+                # Mizuki can be used for child voice
+                if voice_id == 'Mizuki':
+                    VOICE_MAPPING['child'].append(voice_id)
+            else:  # Male voices
+                VOICE_MAPPING['male'].append(voice_id)
+                # Takumi can be used for elderly voice
+                if voice_id == 'Takumi':
+                    VOICE_MAPPING['elderly'].append(voice_id)
+        
         print(f"Updated voice mapping: {VOICE_MAPPING}")
+        
+        if not any(VOICE_MAPPING.values()):
+            raise Exception("No neural voices available for Japanese language")
         
         # Test Bedrock runtime access with a simple prompt
         print("Testing Bedrock runtime access...")
@@ -84,43 +112,95 @@ print(f"Temp audio directory exists: {TEMP_AUDIO_DIR.exists()}")
 
 # Voice mapping for different speaker characteristics
 VOICE_MAPPING = {
-    'male': ['Takumi', 'Tomoko'],  # Japanese male voices
+    'male': ['Takumi'],  # Japanese male voices
     'female': ['Mizuki', 'Kazuha'],  # Japanese female voices
     'child': ['Mizuki'],  # Voice that can sound younger
     'elderly': ['Takumi']  # Voice that can sound older
 }
 
-def get_appropriate_voice(speaker_info):
-    """Select an appropriate voice based on speaker characteristics"""
-    # Default to first male voice if no specific characteristics found
-    if not speaker_info or isinstance(speaker_info, str):
-        return VOICE_MAPPING['male'][0]
+def get_appropriate_voice(speaker_info, used_voices=None):
+    """Select an appropriate voice based on speaker characteristics and maintain uniqueness"""
+    if used_voices is None:
+        used_voices = set()
     
-    # Check for gender
-    if 'gender' in speaker_info:
-        if speaker_info['gender'].lower() == 'female':
-            return VOICE_MAPPING['female'][0]
-        return VOICE_MAPPING['male'][0]
+    # Get all available voices
+    all_voices = set()
+    for voices in VOICE_MAPPING.values():
+        all_voices.update(voices)
     
-    # Check for age characteristics
-    if 'age' in speaker_info:
-        if speaker_info['age'].lower() in ['young', 'child']:
-            return VOICE_MAPPING['child'][0]
-        elif speaker_info['age'].lower() in ['elderly', 'old']:
-            return VOICE_MAPPING['elderly'][0]
+    if not all_voices:
+        print("No voices available in voice mapping")
+        return None
     
-    return VOICE_MAPPING['male'][0]
+    # Get remaining available voices
+    available_voices = list(all_voices - used_voices)
+    
+    # If no more unique voices available, reset to using all voices
+    if not available_voices:
+        available_voices = list(all_voices)
+    
+    # If we have speaker characteristics, try to match them first
+    if speaker_info and not isinstance(speaker_info, str):
+        # Check for gender
+        if 'gender' in speaker_info:
+            gender = 'female' if speaker_info['gender'].lower() == 'female' else 'male'
+            if VOICE_MAPPING[gender]:  # Check if we have voices for this gender
+                gender_voices = VOICE_MAPPING[gender]
+                # Try to find an unused voice of the correct gender
+                unused_gender_voices = [v for v in gender_voices if v in available_voices]
+                if unused_gender_voices:
+                    return random.choice(unused_gender_voices)
+        
+        # Check for age characteristics
+        if 'age' in speaker_info:
+            age = speaker_info['age'].lower()
+            if age in ['young', 'child'] and VOICE_MAPPING['child']:
+                child_voices = [v for v in VOICE_MAPPING['child'] if v in available_voices]
+                if child_voices:
+                    return random.choice(child_voices)
+            elif age in ['elderly', 'old'] and VOICE_MAPPING['elderly']:
+                elderly_voices = [v for v in VOICE_MAPPING['elderly'] if v in available_voices]
+                if elderly_voices:
+                    return random.choice(elderly_voices)
+    
+    # If we couldn't find a matching voice or have no characteristics,
+    # just pick a random available voice
+    if available_voices:
+        return random.choice(available_voices)
+    
+    # Fallback to any voice if all else fails
+    return random.choice(list(all_voices)) if all_voices else None
 
 def generate_audio_for_line(text, voice_id):
     """Generate audio for a single line of dialogue using Amazon Polly"""
     try:
+        if not voice_id:
+            print("No voice ID provided")
+            return None
+            
         print(f"Generating audio for text: {text} with voice: {voice_id}")
-        response = polly.synthesize_speech(
-            Text=text,
-            OutputFormat='mp3',
-            VoiceId=voice_id,
-            LanguageCode='ja-JP'
-        )
+        try:
+            # First try with neural engine
+            response = polly.synthesize_speech(
+                Text=text,
+                OutputFormat='mp3',
+                VoiceId=voice_id,
+                Engine='neural',
+                LanguageCode='ja-JP'
+            )
+        except Exception as e:
+            if 'ValidationException' in str(e) and 'does not support the selected engine' in str(e):
+                print(f"Neural engine not supported for voice {voice_id}, falling back to standard engine")
+                # Fall back to standard engine
+                response = polly.synthesize_speech(
+                    Text=text,
+                    OutputFormat='mp3',
+                    VoiceId=voice_id,
+                    Engine='standard',
+                    LanguageCode='ja-JP'
+                )
+            else:
+                raise e
         
         # Generate a unique filename in the temp directory
         filename = f"{uuid.uuid4()}.mp3"
@@ -190,6 +270,7 @@ def generate_conversation_audio(conversation_analysis):
             
         # Track used voices to ensure different speakers get different voices
         speaker_voices = {}
+        used_voices = set()
         audio_files = []
         
         # Generate audio for each line
@@ -200,8 +281,9 @@ def generate_conversation_audio(conversation_analysis):
             
             # Get or assign a voice for this speaker
             if speaker not in speaker_voices:
-                voice_id = get_appropriate_voice(speaker)
+                voice_id = get_appropriate_voice(speaker, used_voices)
                 speaker_voices[speaker] = voice_id
+                used_voices.add(voice_id)
                 print(f"Assigned voice {voice_id} to speaker {speaker}")
             
             # Generate audio for this line
