@@ -19,9 +19,9 @@ AWS_SECRET_ACCESS_KEY=your_secret_key
 
 ## Usage
 
-1. First, run the transcript parser. The transcript parser will parse the transcript of a youtube video and save the results to a directory. 
+3. First, run the transcript parser. The transcript parser will parse the transcript of a youtube video and save the results to a directory.
 
-The backend will need this data to populate the chroma database. 
+The backend will need this data to populate the chroma database.
 
 Parse the transcripts of as many videos as you want to build up the data, before you run the backend. You will need to stop the backend and restart it each time you parse a new transcript, if you want to insert the new transcripts in your vectordatabase.
 
@@ -43,8 +43,7 @@ python jlpt_parse_transcript.py CQ82yk3BC6c
 python jlpt_parse_transcript.py SAaWBv630nI
 ```
 
-2. Run backend (need this running so that the frontend can access chromadb):
-
+4. Run backend (need this running so that the frontend can access chromadb):
 
 ```bash
 python listening-comp-backend.py
