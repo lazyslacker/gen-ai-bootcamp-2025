@@ -187,12 +187,7 @@ if st.session_state.debug_mode:
             st.write("Correct Answer:", st.session_state.current_question.get("correct_answer"))
             
             # Find and show correct key
-            correct_key = None
-            for k, v in st.session_state.current_question["answers"].items():
-                if v == st.session_state.current_question["correct_answer"]:
-                    correct_key = k
-                    break
-
+            correct_key = st.session_state.current_question.get("correct_answer")
             st.write("Correct Key:", correct_key)
             
             # Show all answers
@@ -201,11 +196,10 @@ if st.session_state.debug_mode:
                 st.write(f"{k}: {v}")
 
             st.write("Answers:", st.session_state.current_question["answers"].items())
-            st.write("Correct Answer:", correct_key)
 
 # Main content
 with col2:
-    st.title("Japanese Listening Comprehension")
+    st.title("Japanese Listening Comprehension - JLPT N5")
     
     # Topic input label with larger text
     st.markdown('<p class="topic-label">Enter a topic (in Japanese):</p>', unsafe_allow_html=True)
@@ -255,13 +249,8 @@ with col2:
                         # Store new question and reset all related state
                         question_data = data["results"][0]
                         st.session_state.current_question = question_data
-                        computed_key = compute_correct_key(question_data)
-                        if computed_key is not None:
-                            st.session_state.correct_key = computed_key
-                            save_to_history(question_data)
-                            st.rerun()
-                        else:
-                            st.error("Error: Could not determine correct answer. Please try another question.")
+                        # Set the correct_key from the API response
+                        st.session_state.correct_key = question_data.get("correct_answer")
                     else:
                         st.warning("No questions found for this topic. Please try another topic.")
             except requests.exceptions.RequestException as e:
@@ -314,9 +303,9 @@ with col2:
                     button_label = f"{key}: {value}"
                     # Always show the correct answer in green
                     if key == st.session_state.correct_key:
-                        st.success(f"✓ {button_label} (Correct Answer)")
+                        st.success(f"✓ {button_label}")
                     # Show wrong answer in red only if it was selected
-                    elif key == st.session_state.selected_answer:
+                    if key == st.session_state.selected_answer and key != st.session_state.correct_key:
                         st.error(f"✗ {button_label}")
         
         # Add some spacing
