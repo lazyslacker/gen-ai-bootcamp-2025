@@ -27,17 +27,40 @@ if 'debug_mode' not in st.session_state:
     st.session_state.debug_mode = False
 if 'correct_key' not in st.session_state:
     st.session_state.correct_key = None
+if 'conversation_analysis' not in st.session_state:
+    st.session_state.conversation_analysis = None
 
-def compute_correct_key(question_data):
-    """Helper function to compute the correct answer key"""
+def analyze_conversation_with_nova_micro(conversation_text):
+    
     try:
-        for k, v in question_data["answers"].items():
-            if v == question_data["correct_answer"]:
-                return k
-        return None
+        prompt = f"""
+
+{conversation_text}
+Clearly identify the speaker in each line of the dialogue.
+"""
+        response = bedrock.invoke_model(
+            modelId="amazon.nova-micro-v1:0",
+            body=json.dumps({
+                "inferenceConfig": {
+                    "max_new_tokens": 1000
+                },
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": [
+                            {"text": prompt}
+                        ]
+                    }
+                ]
+            })
+        )
+        
+        response_body = json.loads(response.get('body').read().decode())
+        analysis = response_body['output']['message']['content'][0]['text']
+        return analysis
     except Exception as e:
         if st.session_state.debug_mode:
-            st.error(f"Error computing correct key: {str(e)}")
+            st.error(f"Error analyzing conversation: {str(e)}")
         return None
 
 def generate_question_with_nova(topic, example_question):
@@ -53,6 +76,7 @@ Important requirements:
 3. Make sure the question is different from the example but related to the topic
 4. Ensure all text is in Japanese
 5. Include a brief introduction, a conversation, a question, and 4 answer choices (A, B, C, D)
+6. In the conversation, clearly identify the speaker for each line of dialogue
 6. Clearly mark the correct answer
 
 Generate the response in valid JSON format."""
@@ -83,6 +107,11 @@ Generate the response in valid JSON format."""
         if json_match:
             json_str = json_match.group(0)
             generated_question = json.loads(json_str)
+            
+            # Analyze the conversation using Nova Micro
+            if "conversation" in generated_question:
+                conversation_analysis = analyze_conversation_with_nova_micro(generated_question["conversation"])
+                st.session_state.conversation_analysis = conversation_analysis
         else:
             if st.session_state.debug_mode:
                 st.error("Failed to generate a valid question. Falling back to example question.")
@@ -257,6 +286,11 @@ if st.session_state.debug_mode:
         st.subheader("Session State")
         st.write("Selected Answer:", st.session_state.selected_answer)
         st.write("Feedback Shown:", st.session_state.feedback_shown)
+        
+        # Show conversation analysis if available
+        if st.session_state.conversation_analysis:
+            st.subheader("Conversation Analysis")
+            st.write(st.session_state.conversation_analysis)
         
         # Show current question info if available
         if st.session_state.current_question:
