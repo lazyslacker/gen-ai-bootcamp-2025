@@ -9,6 +9,7 @@ import json
 from dotenv import load_dotenv
 from pydub import AudioSegment
 import uuid
+import shutil
 
 load_dotenv()
 
@@ -69,17 +70,17 @@ polly = boto3.client(
     region_name='us-east-1'  # replace with your region
 )
 
-# Test AWS credentials at startup
-aws_credentials_valid = test_aws_credentials()
-
 # Audio directory configuration
 AUDIO_DIR = Path(__file__).parent / "audio"
+TEMP_AUDIO_DIR = AUDIO_DIR / "temp"
 AUDIO_DIR.mkdir(exist_ok=True)
+TEMP_AUDIO_DIR.mkdir(exist_ok=True)
 
 # Add debug logging for audio directory
 print(f"Audio directory path: {AUDIO_DIR}")
+print(f"Temp audio directory path: {TEMP_AUDIO_DIR}")
 print(f"Audio directory exists: {AUDIO_DIR.exists()}")
-print(f"Audio directory is directory: {AUDIO_DIR.is_dir()}")
+print(f"Temp audio directory exists: {TEMP_AUDIO_DIR.exists()}")
 
 # Voice mapping for different speaker characteristics
 VOICE_MAPPING = {
@@ -121,9 +122,9 @@ def generate_audio_for_line(text, voice_id):
             LanguageCode='ja-JP'
         )
         
-        # Generate a unique filename
+        # Generate a unique filename in the temp directory
         filename = f"{uuid.uuid4()}.mp3"
-        file_path = AUDIO_DIR / filename
+        file_path = TEMP_AUDIO_DIR / filename
         print(f"Saving audio to: {file_path}")
         
         # Save the audio stream to a file
@@ -151,7 +152,7 @@ def combine_audio_files(audio_files):
             segment = AudioSegment.from_mp3(audio_file)
             combined += segment
             
-        # Generate output filename
+        # Generate output filename in the main audio directory
         output_filename = f"conversation_{uuid.uuid4()}.mp3"
         output_path = AUDIO_DIR / output_filename
         print(f"Saving combined audio to: {output_path}")
@@ -159,6 +160,7 @@ def combine_audio_files(audio_files):
         # Export combined audio
         combined.export(str(output_path), format="mp3")
         print(f"Successfully saved combined audio: {output_path}")
+        
         return str(output_path)
     except Exception as e:
         print(f"Error in combine_audio_files: {str(e)}")
