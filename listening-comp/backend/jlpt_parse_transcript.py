@@ -141,7 +141,20 @@ class JLPTQuestionGenerator:
                     f.write(f"問題{i}. {q['question']}\n\n")
                     for j, option in enumerate(q['options']):
                         f.write(f"{chr(65+j)}. {option}\n")
-                    f.write(f"\n正解: {q['answer']}\n\n")
+                    
+                    # Determine the correct answer letter
+                    answer = q['answer']
+                    if answer not in ['A', 'B', 'C', 'D']:
+                        # Try to find the matching option
+                        for j, option in enumerate(q['options']):
+                            if answer == option:
+                                answer = chr(65 + j)
+                                break
+                        # # If still not found, default to 'A'
+                        # if answer not in ['A', 'B', 'C', 'D']:
+                        #     answer = 'A'
+                    
+                    f.write(f"\n正解: {answer}\n\n")
         except Exception as e:
             raise Exception(f"Error saving questions to file: {str(e)}")
 
