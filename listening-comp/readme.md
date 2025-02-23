@@ -20,4 +20,4 @@ See the `frontend` folder for the readme on how to run it.
 
 Example conversation with multi-turn dialogue:
 
-![Example conversation with multi-turn dialogue](example.mp3)
+![Example conversation with multi-turn dialogue](example.mp4)
