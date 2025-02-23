@@ -7,14 +7,217 @@ import random
 import boto3
 import json
 from dotenv import load_dotenv
+from pydub import AudioSegment
+import uuid
 
 load_dotenv()
+
+# Test AWS credentials
+def test_aws_credentials():
+    try:
+        # Test Polly access first (this is what we need for audio)
+        print("Testing Polly access...")
+        polly_response = polly.describe_voices(LanguageCode='ja-JP')
+        print("Polly access successful")
+        available_voices = [voice['Id'] for voice in polly_response['Voices']]
+        print(f"Available Japanese voices: {available_voices}")
+        
+        # Update voice mapping based on available voices
+        global VOICE_MAPPING
+        VOICE_MAPPING = {
+            'male': [v for v in available_voices if v in ['Takumi', 'Tomoko']],
+            'female': [v for v in available_voices if v in ['Mizuki', 'Kazuha']],
+            'child': [v for v in available_voices if v in ['Mizuki']],
+            'elderly': [v for v in available_voices if v in ['Takumi']]
+        }
+        print(f"Updated voice mapping: {VOICE_MAPPING}")
+        
+        # Test Bedrock runtime access with a simple prompt
+        print("Testing Bedrock runtime access...")
+        test_response = bedrock.invoke_model(
+            modelId="amazon.nova-micro-v1:0",
+            body=json.dumps({
+                "inferenceConfig": {
+                    "max_new_tokens": 10
+                },
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": [
+                            {"text": "Say hello"}
+                        ]
+                    }
+                ]
+            })
+        )
+        print("Bedrock runtime access successful")
+        return True
+    except Exception as e:
+        print(f"AWS credentials test failed: {str(e)}")
+        st.error("AWS credentials test failed. Please check your credentials and permissions.")
+        return False
 
 # Bedrock client configuration
 bedrock = boto3.client(
     service_name='bedrock-runtime',
     region_name='us-east-1'  # replace with your region
 )
+
+# Polly client configuration
+polly = boto3.client(
+    service_name='polly',
+    region_name='us-east-1'  # replace with your region
+)
+
+# Test AWS credentials at startup
+aws_credentials_valid = test_aws_credentials()
+
+# Audio directory configuration
+AUDIO_DIR = Path(__file__).parent / "audio"
+AUDIO_DIR.mkdir(exist_ok=True)
+
+# Add debug logging for audio directory
+print(f"Audio directory path: {AUDIO_DIR}")
+print(f"Audio directory exists: {AUDIO_DIR.exists()}")
+print(f"Audio directory is directory: {AUDIO_DIR.is_dir()}")
+
+# Voice mapping for different speaker characteristics
+VOICE_MAPPING = {
+    'male': ['Takumi', 'Tomoko'],  # Japanese male voices
+    'female': ['Mizuki', 'Kazuha'],  # Japanese female voices
+    'child': ['Mizuki'],  # Voice that can sound younger
+    'elderly': ['Takumi']  # Voice that can sound older
+}
+
+def get_appropriate_voice(speaker_info):
+    """Select an appropriate voice based on speaker characteristics"""
+    # Default to first male voice if no specific characteristics found
+    if not speaker_info or isinstance(speaker_info, str):
+        return VOICE_MAPPING['male'][0]
+    
+    # Check for gender
+    if 'gender' in speaker_info:
+        if speaker_info['gender'].lower() == 'female':
+            return VOICE_MAPPING['female'][0]
+        return VOICE_MAPPING['male'][0]
+    
+    # Check for age characteristics
+    if 'age' in speaker_info:
+        if speaker_info['age'].lower() in ['young', 'child']:
+            return VOICE_MAPPING['child'][0]
+        elif speaker_info['age'].lower() in ['elderly', 'old']:
+            return VOICE_MAPPING['elderly'][0]
+    
+    return VOICE_MAPPING['male'][0]
+
+def generate_audio_for_line(text, voice_id):
+    """Generate audio for a single line of dialogue using Amazon Polly"""
+    try:
+        print(f"Generating audio for text: {text} with voice: {voice_id}")
+        response = polly.synthesize_speech(
+            Text=text,
+            OutputFormat='mp3',
+            VoiceId=voice_id,
+            LanguageCode='ja-JP'
+        )
+        
+        # Generate a unique filename
+        filename = f"{uuid.uuid4()}.mp3"
+        file_path = AUDIO_DIR / filename
+        print(f"Saving audio to: {file_path}")
+        
+        # Save the audio stream to a file
+        if "AudioStream" in response:
+            with open(file_path, 'wb') as file:
+                file.write(response['AudioStream'].read())
+            print(f"Successfully saved audio file: {file_path}")
+            return str(file_path)
+        else:
+            print("No AudioStream in response")
+            return None
+    except Exception as e:
+        print(f"Error in generate_audio_for_line: {str(e)}")
+        if st.session_state.debug_mode:
+            st.error(f"Error generating audio: {str(e)}")
+        return None
+
+def combine_audio_files(audio_files):
+    """Combine multiple audio files into a single audio file"""
+    try:
+        print(f"Combining audio files: {audio_files}")
+        combined = AudioSegment.empty()
+        for audio_file in audio_files:
+            print(f"Processing audio file: {audio_file}")
+            segment = AudioSegment.from_mp3(audio_file)
+            combined += segment
+            
+        # Generate output filename
+        output_filename = f"conversation_{uuid.uuid4()}.mp3"
+        output_path = AUDIO_DIR / output_filename
+        print(f"Saving combined audio to: {output_path}")
+        
+        # Export combined audio
+        combined.export(str(output_path), format="mp3")
+        print(f"Successfully saved combined audio: {output_path}")
+        return str(output_path)
+    except Exception as e:
+        print(f"Error in combine_audio_files: {str(e)}")
+        if st.session_state.debug_mode:
+            st.error(f"Error combining audio files: {str(e)}")
+        return None
+
+def generate_conversation_audio(conversation_analysis):
+    """Generate audio for the entire conversation"""
+    try:
+        if not conversation_analysis:
+            print("No conversation analysis provided")
+            return None
+            
+        print(f"Generating audio for conversation analysis: {conversation_analysis}")
+        # Parse the conversation analysis JSON
+        if isinstance(conversation_analysis, str):
+            analysis = json.loads(conversation_analysis)
+        else:
+            analysis = conversation_analysis
+            
+        # Get the dialogue array from the analysis
+        dialogue = analysis.get('dialogue', [])
+        if not dialogue:
+            print("No dialogue found in analysis")
+            return None
+            
+        # Track used voices to ensure different speakers get different voices
+        speaker_voices = {}
+        audio_files = []
+        
+        # Generate audio for each line
+        for line in dialogue:
+            speaker = line.get('speaker', 'Unknown')
+            text = line.get('line', '')  # Note: changed from 'text' to 'line' to match the JSON structure
+            print(f"Processing line for speaker {speaker}: {text}")
+            
+            # Get or assign a voice for this speaker
+            if speaker not in speaker_voices:
+                voice_id = get_appropriate_voice(speaker)
+                speaker_voices[speaker] = voice_id
+                print(f"Assigned voice {voice_id} to speaker {speaker}")
+            
+            # Generate audio for this line
+            audio_file = generate_audio_for_line(text, speaker_voices[speaker])
+            if audio_file:
+                audio_files.append(audio_file)
+        
+        print(f"Generated {len(audio_files)} audio files")
+        # Combine all audio files
+        if audio_files:
+            return combine_audio_files(audio_files)
+        
+        return None
+    except Exception as e:
+        print(f"Error in generate_conversation_audio: {str(e)}")
+        if st.session_state.debug_mode:
+            st.error(f"Error generating conversation audio: {str(e)}")
+        return None
 
 # Initialize session state variables
 if 'selected_answer' not in st.session_state:
@@ -29,16 +232,17 @@ if 'correct_key' not in st.session_state:
     st.session_state.correct_key = None
 if 'conversation_analysis' not in st.session_state:
     st.session_state.conversation_analysis = None
+if 'conversation_audio' not in st.session_state:
+    st.session_state.conversation_audio = None
 
 def analyze_conversation_with_nova_micro(conversation_text):
-
     try:
+        print("Starting conversation analysis")
         prompt = f"""
-
 {conversation_text}
 Clearly identify the speaker in each line of the dialogue. Return a json document with speaker tags for each line of dialogue. Just return the JSON document and nothing else please.
-
 """
+        print(f"Sending prompt to Nova Micro: {prompt}")
         response = bedrock.invoke_model(
             modelId="amazon.nova-micro-v1:0",
             body=json.dumps({
@@ -58,8 +262,23 @@ Clearly identify the speaker in each line of the dialogue. Return a json documen
         
         response_body = json.loads(response.get('body').read().decode())
         analysis = response_body['output']['message']['content'][0]['text']
+        print(f"Received analysis: {analysis}")
+        
+        # Store the analysis in session state
+        st.session_state.conversation_analysis = analysis
+        
+        # Generate audio for the conversation
+        print("Starting audio generation")
+        audio_path = generate_conversation_audio(analysis)
+        if audio_path:
+            print(f"Audio generated successfully: {audio_path}")
+            st.session_state.conversation_audio = audio_path
+        else:
+            print("Failed to generate audio")
+        
         return analysis
     except Exception as e:
+        print(f"Error in analyze_conversation_with_nova_micro: {str(e)}")
         if st.session_state.debug_mode:
             st.error(f"Error analyzing conversation: {str(e)}")
         return None
@@ -397,6 +616,11 @@ with col2:
         
         st.subheader("Conversation")
         st.write(question_data["conversation"])
+        
+        # Display audio player if available
+        if st.session_state.conversation_audio:
+            st.subheader("Listen to the Conversation")
+            st.audio(st.session_state.conversation_audio)
         
         st.subheader("Question")
         st.write(question_data["question"])

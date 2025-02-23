@@ -5,6 +5,7 @@ This is the frontend application for the Japanese Listening Comprehension app bu
 ## Setup
 
 1. Install the required dependencies:
+
 ```bash
 pip install -r requirements.txt
 ```
@@ -12,6 +13,7 @@ pip install -r requirements.txt
 2. Make sure the backend server is running at http://0.0.0.0:8000
 
 3. Run the Streamlit app:
+
 ```bash
 streamlit run app.py
 ```
