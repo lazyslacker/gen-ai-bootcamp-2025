@@ -31,12 +31,13 @@ if 'conversation_analysis' not in st.session_state:
     st.session_state.conversation_analysis = None
 
 def analyze_conversation_with_nova_micro(conversation_text):
-    
+
     try:
         prompt = f"""
 
 {conversation_text}
-Clearly identify the speaker in each line of the dialogue.
+Clearly identify the speaker in each line of the dialogue. Return a json document with speaker tags for each line of dialogue. Just return the JSON document and nothing else please.
+
 """
         response = bedrock.invoke_model(
             modelId="amazon.nova-micro-v1:0",
