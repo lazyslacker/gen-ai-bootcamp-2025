@@ -4,6 +4,17 @@ import requests
 from pathlib import Path
 import os
 import random
+import boto3
+import json
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# Bedrock client configuration
+bedrock = boto3.client(
+    service_name='bedrock-runtime',
+    region_name='us-east-1'  # replace with your region
+)
 
 # Initialize session state variables
 if 'selected_answer' not in st.session_state:
@@ -27,6 +38,72 @@ def compute_correct_key(question_data):
     except Exception as e:
         if st.session_state.debug_mode:
             st.error(f"Error computing correct key: {str(e)}")
+        return None
+
+def generate_question_with_nova(topic, example_question):
+    """Generate a new question using Nova Lite based on a topic and example"""
+    try:
+        prompt = f"""Given the topic "{topic}" and the following example question format:
+{json.dumps(example_question, ensure_ascii=False, indent=2)}
+
+Please generate a new Japanese listening comprehension question following the exact same format.
+Important requirements:
+1. Use only JLPT N5 level vocabulary and grammar
+2. Follow the exact same JSON structure as the example
+3. Make sure the question is different from the example but related to the topic
+4. Ensure all text is in Japanese
+5. Include a brief introduction, a conversation, a question, and 4 answer choices (A, B, C, D)
+6. Clearly mark the correct answer
+
+Generate the response in valid JSON format."""
+
+        response = bedrock.invoke_model(
+            modelId="amazon.nova-lite-v1:0",
+            body=json.dumps({
+                "inferenceConfig": {
+                    "max_new_tokens": 1000
+                },
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": [
+                            {"text": prompt}
+                        ]
+                    }
+                ]
+            })
+        )
+        
+        response_body = json.loads(response.get('body').read().decode())
+        generated_text = response_body['output']['message']['content'][0]['text']
+
+        # Try to extract JSON from the response text
+        import re
+        json_match = re.search(r'\{.*\}', generated_text, re.DOTALL)
+        if json_match:
+            json_str = json_match.group(0)
+            generated_question = json.loads(json_str)
+        else:
+            if st.session_state.debug_mode:
+                st.error("Failed to generate a valid question. Falling back to example question.")
+            return None
+
+        # Validate the generated question has all required fields
+        required_fields = ["introduction", "conversation", "question", "answers", "correct_answer"]
+        missing_fields = [field for field in required_fields if field not in generated_question]
+        if missing_fields:
+            if st.session_state.debug_mode:
+                st.error(f"Generated question is missing required fields. Falling back to example question.")
+            return None
+
+        return generated_question
+    except json.JSONDecodeError as e:
+        if st.session_state.debug_mode:
+            st.error("Failed to generate a valid question. Falling back to example question.")
+        return None
+    except Exception as e:
+        if st.session_state.debug_mode:
+            st.error("An error occurred while generating the question. Falling back to example question.")
         return None
 
 # def get_correct_answer_key(answers, correct_answer_text):
@@ -236,6 +313,7 @@ with col2:
             st.warning("Please enter a topic or click 'Random Topic' first.")
         else:
             try:
+                # First get a question from the API to use as an example
                 response = requests.post(
                     "http://0.0.0.0:8000/api/search",
                     json={
@@ -243,14 +321,28 @@ with col2:
                         "n_results": 1
                     }
                 )
+                
                 if response.status_code == 200:
                     data = response.json()
                     if data["results"]:
-                        # Store new question and reset all related state
-                        question_data = data["results"][0]
-                        st.session_state.current_question = question_data
-                        # Set the correct_key from the API response
-                        st.session_state.correct_key = question_data.get("correct_answer")
+                        # Get the example question from API
+                        example_question = data["results"][0]
+                        
+                        # Generate a new question using Nova
+                        generated_question = generate_question_with_nova(topic, example_question)
+                        
+                        if generated_question:
+                            # Store the generated question and set correct key
+                            st.session_state.current_question = generated_question
+                            st.session_state.correct_key = generated_question.get("correct_answer")
+                            
+                            # Save the generated question to history
+                            save_to_history(generated_question)
+                        else:
+                            # Fallback to API question if generation fails
+                            st.session_state.current_question = example_question
+                            st.session_state.correct_key = example_question.get("correct_answer")
+                            save_to_history(example_question)
                     else:
                         st.warning("No questions found for this topic. Please try another topic.")
             except requests.exceptions.RequestException as e:
