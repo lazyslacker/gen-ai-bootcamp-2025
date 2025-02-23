@@ -241,6 +241,15 @@ def combine_audio_files(audio_files):
         combined.export(str(output_path), format="mp3")
         print(f"Successfully saved combined audio: {output_path}")
         
+        # Clean up temporary audio files
+        print("Cleaning up temporary audio files...")
+        for audio_file in audio_files:
+            try:
+                os.remove(audio_file)
+                print(f"Deleted temporary file: {audio_file}")
+            except Exception as e:
+                print(f"Error deleting temporary file {audio_file}: {str(e)}")
+        
         return str(output_path)
     except Exception as e:
         print(f"Error in combine_audio_files: {str(e)}")
@@ -698,7 +707,7 @@ with col2:
                         example_question = data["results"][0]
                         
                         # Generate a new question using Nova
-                        st.info("⚡ Generating a new question with Nova Lite...")  # Update status
+                        st.info("⚡ Generating a new question ...")  # Update status
                         generated_question = generate_question_with_nova(topic, example_question)
                         
                         if generated_question:
