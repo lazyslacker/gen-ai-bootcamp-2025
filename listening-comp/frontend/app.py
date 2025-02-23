@@ -318,9 +318,16 @@ if 'conversation_analysis' not in st.session_state:
     st.session_state.conversation_analysis = None
 if 'conversation_audio' not in st.session_state:
     st.session_state.conversation_audio = None
+if 'processing_status' not in st.session_state:
+    st.session_state.processing_status = None
 
+def set_status(message):
+    """Update the processing status message"""
+    st.session_state.processing_status = message
+    
 def analyze_conversation_with_nova_micro(conversation_text):
     try:
+        set_status("Analyzing conversation structure...")
         print("Starting conversation analysis")
         prompt = f"""
 {conversation_text}
@@ -352,24 +359,29 @@ Clearly identify the speaker in each line of the dialogue. Return a json documen
         st.session_state.conversation_analysis = analysis
         
         # Generate audio for the conversation
+        set_status("Generating audio for the conversation...")
         print("Starting audio generation")
         audio_path = generate_conversation_audio(analysis)
         if audio_path:
             print(f"Audio generated successfully: {audio_path}")
             st.session_state.conversation_audio = audio_path
+            set_status(None)  # Clear status when done
         else:
             print("Failed to generate audio")
+            set_status("Failed to generate audio")
         
         return analysis
     except Exception as e:
         print(f"Error in analyze_conversation_with_nova_micro: {str(e)}")
         if st.session_state.debug_mode:
             st.error(f"Error analyzing conversation: {str(e)}")
+        set_status("Error during conversation analysis")
         return None
 
 def generate_question_with_nova(topic, example_question):
     """Generate a new question using Nova Lite based on a topic and example"""
     try:
+        set_status("Generating a new question...")
         prompt = f"""Given the topic "{topic}" and the following example question format:
 {json.dumps(example_question, ensure_ascii=False, indent=2)}
 
@@ -419,6 +431,7 @@ Generate the response in valid JSON format."""
         else:
             if st.session_state.debug_mode:
                 st.error("Failed to generate a valid question. Falling back to example question.")
+            set_status("Failed to generate question, using example instead")
             return None
 
         # Validate the generated question has all required fields
@@ -427,16 +440,19 @@ Generate the response in valid JSON format."""
         if missing_fields:
             if st.session_state.debug_mode:
                 st.error(f"Generated question is missing required fields. Falling back to example question.")
+            set_status("Generated question was incomplete, using example instead")
             return None
 
         return generated_question
     except json.JSONDecodeError as e:
         if st.session_state.debug_mode:
             st.error("Failed to generate a valid question. Falling back to example question.")
+        set_status("Error parsing generated question, using example instead")
         return None
     except Exception as e:
         if st.session_state.debug_mode:
             st.error("An error occurred while generating the question. Falling back to example question.")
+        set_status("Error during question generation, using example instead")
         return None
 
 # def get_correct_answer_key(answers, correct_answer_text):
@@ -557,6 +573,18 @@ st.markdown("""
     font-size: 1.5rem;
     margin-bottom: 0.5rem;
 }
+
+/* Custom styling for status messages */
+.status-message {
+    font-size: 0.9rem;
+    padding: 0.75rem;
+    margin: 0.75rem 0;
+    background-color: #1E1E1E;
+    color: #00FF9C;
+    border: 1px solid #00FF9C;
+    border-radius: 4px;
+    font-family: monospace;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -645,6 +673,7 @@ with col2:
         st.session_state.selected_answer = None
         st.session_state.feedback_shown = False
         st.session_state.correct_key = None
+        st.session_state.processing_status = None
         
         # Ensure we have a valid topic
         if not topic or topic.strip() == "":
@@ -652,6 +681,8 @@ with col2:
         else:
             try:
                 # First get a question from the API to use as an example
+                set_status("Searching for example questions in the database...")
+                st.info("⏳ Searching for example questions in the database...")  # Add immediate feedback
                 response = requests.post(
                     "http://0.0.0.0:8000/api/search",
                     json={
@@ -667,6 +698,7 @@ with col2:
                         example_question = data["results"][0]
                         
                         # Generate a new question using Nova
+                        st.info("⚡ Generating a new question with Nova Lite...")  # Update status
                         generated_question = generate_question_with_nova(topic, example_question)
                         
                         if generated_question:
@@ -690,6 +722,11 @@ with col2:
                     st.error(f"Unexpected error: {str(e)}")
                 else:
                     st.error("An unexpected error occurred. Please try again.")
+
+    # Show processing status if any
+    if st.session_state.processing_status:
+        st.info(f"⏳ {st.session_state.processing_status}")
+        st.write("")  # Add some spacing
 
     # Display current question
     if st.session_state.current_question:
