@@ -10,7 +10,7 @@ This is the frontend application for the Japanese Listening Comprehension app bu
 pip install -r requirements.txt
 ```
 
-2. Make sure the backend server is running at http://0.0.0.0:8000
+2. Make sure the backend server is running at <http://0.0.0.0:8000>
 
 3. Run the Streamlit app:
 
@@ -24,4 +24,4 @@ streamlit run app.py
 - Multiple choice answers with immediate feedback
 - Question history tracking
 - Clean and intuitive user interface
-- Color-coded feedback for correct/incorrect answers 
+- Color-coded feedback for correct/incorrect answers

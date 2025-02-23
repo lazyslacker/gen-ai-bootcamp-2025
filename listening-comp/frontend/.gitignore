@@ -1,3 +1,4 @@
 .env
 venv
 question_history.json
+*.mp3
