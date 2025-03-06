@@ -1,0 +1,14 @@
+langgraph
+IPython
+langchain-openai
+langchain-nomic 
+langchain_community 
+tiktoken 
+langchainhub 
+chromadb 
+langchain 
+langchain-ollama
+langchain-core
+langchain-openai
+tavily-python
+
