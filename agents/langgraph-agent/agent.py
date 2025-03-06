@@ -4,6 +4,7 @@ from langgraph.graph import StateGraph, START, END
 from langgraph.graph.message import add_messages
 from langchain_ollama import ChatOllama
 from langchain_community.tools.tavily_search import TavilySearchResults
+from langchain_core.tools import InjectedToolCallId, tool
 from langchain_core.messages import ToolMessage
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import ToolNode, tools_condition
@@ -28,21 +29,46 @@ class State(TypedDict):
     # in the annotation defines how this state key should be updated
     # (in this case, it appends messages to the list, rather than overwriting them)
     messages: Annotated[list, add_messages]
+    name: str
+    birthday: str
 
 graph_builder = StateGraph(State)
 
+# Note that because we are generating a ToolMessage for a state update, we
+# generally require the ID of the corresponding tool call. We can use
+# LangChain's InjectedToolCallId to signal that this argument should not
+# be revealed to the model in the tool's schema.
 @tool
-def human_assistance(query: str) -> str:
+def human_assistance(name: str, birthday: str, tool_call_id: Annotated[str, InjectedToolCallId]) -> str:
+
     """Request assistance from a human."""
-    # human_response = interrupt({"query": query})
-    human_response = (
-        "We, the experts are here to help! We'd recommend you check out LangGraph to build your agent."
-        " It's much more reliable and extensible than simple autonomous agents."
+    human_response = interrupt(
+        {
+            "question": "Is this correct?",
+            "name": name,
+            "birthday": birthday,
+        },
     )
+    # If the information is correct, update the state as-is.
+    if human_response.get("correct", "").lower().startswith("y"):
+        verified_name = name
+        verified_birthday = birthday
+        response = "Correct"
+    # Otherwise, receive information from the human reviewer.
+    else:
+        verified_name = human_response.get("name", name)
+        verified_birthday = human_response.get("birthday", birthday)
+        response = f"Made a correction: {human_response}"
 
-    human_command = Command(resume={"data": human_response})
-
-    return human_response
+    # This time we explicitly update the state with a ToolMessage inside
+    # the tool.
+    state_update = {
+        "name": verified_name,
+        "birthday": verified_birthday,
+        "messages": [ToolMessage(response, tool_call_id=tool_call_id)],
+    }
+    # We return a Command object in the tool to update our state.
+    return Command(update=state_update)
 
 def route_tools(
     state: State,
@@ -101,7 +127,14 @@ graph = graph_builder.compile(checkpointer=memory)
 config = {"configurable": {"thread_id": "1"}}
 
 def stream_graph_updates(user_input: str):
-    events = graph.stream({"messages": [{"role": "user", "content": user_input}]}, config, stream_mode="values")
+    try:
+        # Invoke the graph
+        events = graph.stream({"messages": [{"role": "user", "content": user_input}]}, config, stream_mode="values")
+    except KeyboardInterrupt:
+        # Handle the interrupt
+        user_input = input("Graph interrupted. Please provide input to resume: ")
+        events = graph.stream(Command(resume=user_input), config, stream_mode="values")
+        
     for event in events:
          event["messages"][-1].pretty_print()
 
