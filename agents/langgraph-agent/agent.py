@@ -2,7 +2,6 @@ from typing import Annotated
 from typing_extensions import TypedDict
 from langgraph.graph import StateGraph, START, END
 from langgraph.graph.message import add_messages
-from langchain_ollama import ChatOllama
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_core.tools import InjectedToolCallId, tool
 from langchain_core.messages import ToolMessage
@@ -11,6 +10,14 @@ from langgraph.prebuilt import ToolNode, tools_condition
 from langchain_core.tools import tool
 from langgraph.types import Command, interrupt
 from langchain_core.runnables.graph import MermaidDrawMethod
+
+from langchain_ollama import ChatOllama
+from langchain_google_genai import ChatGoogleGenerativeAI
+
+# Rate limiting
+import time
+from functools import wraps
+import random
 
 import json
 import getpass
@@ -21,6 +28,39 @@ def _set_env(var: str):
         os.environ[var] = getpass.getpass(f"{var}: ")
 
 _set_env("TAVILY_API_KEY")
+_set_env("GOOGLE_API_KEY")
+
+# Add these rate limiting utilities
+def rate_limit(min_delay=5.0, max_delay=7.0):
+    """
+    Decorator to add rate limiting with a random delay between min_delay and max_delay seconds.
+    This helps avoid hitting API rate limits by spacing out requests.
+    """
+    def decorator(func):
+        last_call_time = [0]  # Using a list to store mutable state
+        
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            # Calculate time since last call
+            current_time = time.time()
+            time_since_last_call = current_time - last_call_time[0]
+            
+            # Determine how long to wait
+            delay = random.uniform(min_delay, max_delay)
+            if time_since_last_call < delay:
+                time_to_wait = delay - time_since_last_call
+                print(f"Rate limiting: waiting {time_to_wait:.2f} seconds...")
+                time.sleep(time_to_wait)
+            
+            # Update last call time
+            last_call_time[0] = time.time()
+            
+            # Call the original function
+            return func(*args, **kwargs)
+        
+        return wrapper
+    
+    return decorator
 
 memory = MemorySaver()
 
@@ -39,36 +79,15 @@ graph_builder = StateGraph(State)
 # LangChain's InjectedToolCallId to signal that this argument should not
 # be revealed to the model in the tool's schema.
 @tool
-def human_assistance(name: str, birthday: str, tool_call_id: Annotated[str, InjectedToolCallId]) -> str:
-
+#def human_assistance(name: str, birthday: str, tool_call_id: Annotated[str, InjectedToolCallId]) -> str:
+def human_assistance(query: str) -> str:
     """Request assistance from a human."""
-    human_response = interrupt(
-        {
-            "question": "Is this correct?",
-            "name": name,
-            "birthday": birthday,
-        },
-    )
-    # If the information is correct, update the state as-is.
-    if human_response.get("correct", "").lower().startswith("y"):
-        verified_name = name
-        verified_birthday = birthday
-        response = "Correct"
-    # Otherwise, receive information from the human reviewer.
-    else:
-        verified_name = human_response.get("name", name)
-        verified_birthday = human_response.get("birthday", birthday)
-        response = f"Made a correction: {human_response}"
+    human_response ="We, the experts are here to help! We'd recommend you check out LangGraph to build your agent. "
+    human_response +="It's much more reliable and extensible than simple autonomous agents. You can search the web for more information."
+    return human_response
 
-    # This time we explicitly update the state with a ToolMessage inside
-    # the tool.
-    state_update = {
-        "name": verified_name,
-        "birthday": verified_birthday,
-        "messages": [ToolMessage(response, tool_call_id=tool_call_id)],
-    }
-    # We return a Command object in the tool to update our state.
-    return Command(update=state_update)
+    # human_response = interrupt({"query": query})
+    # return human_response["data"]
 
 def route_tools(
     state: State,
@@ -90,17 +109,21 @@ def route_tools(
 tool = TavilySearchResults(max_results=2)
 tools = [tool, human_assistance]
 
-llm = ChatOllama(model="llama3.2:1b", 
-                 api_key="ollama",     
-                 base_url="http://localhost:8008/",)
+llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro")
+# llm = ChatOllama(model="llama3.2:1b", 
+#                  api_key="ollama",     
+#                  base_url="http://localhost:8008/",)
 llm_with_tools = llm.bind_tools(tools)
 tool_node = ToolNode(tools)
 
+# Apply the rate limiting decorator to your chatbot function
+@rate_limit(min_delay=5.0, max_delay=7.0)
 def chatbot(state: State):
     message = llm_with_tools.invoke(state["messages"])
     # Because we will be interrupting during tool execution,
     # we disable parallel tool calling to avoid repeating any
     # tool invocations when we resume.
+    print(len(message.tool_calls))
     assert len(message.tool_calls) <= 1
     return {"messages": [message]}
 
@@ -127,17 +150,18 @@ graph = graph_builder.compile(checkpointer=memory)
 config = {"configurable": {"thread_id": "1"}}
 
 def stream_graph_updates(user_input: str):
+
     try:
         # Invoke the graph
-        events = graph.stream({"messages": [{"role": "user", "content": user_input}]}, config, stream_mode="values")
+        messages = {"messages": [{"role": "user", "content": user_input}]}
+        events = graph.stream(messages, config, stream_mode="values")
     except KeyboardInterrupt:
         # Handle the interrupt
         user_input = input("Graph interrupted. Please provide input to resume: ")
         events = graph.stream(Command(resume=user_input), config, stream_mode="values")
-        
+
     for event in events:
          event["messages"][-1].pretty_print()
-
 
 # def stream_graph_updates(user_input: str):
 #     for event in graph.stream({"messages": [{"role": "user", "content": user_input}]}):
@@ -145,7 +169,6 @@ def stream_graph_updates(user_input: str):
 #             print("Assistant:", value["messages"][-1].content)
 
 while True:
-
     # Generate and save the diagram as a PNG file
     graph.get_graph().draw_mermaid_png(
         draw_method=MermaidDrawMethod.API,
@@ -157,7 +180,13 @@ while True:
     if user_input.lower() in ["quit", "exit", "q"]:
         print("Goodbye!")
         break
-    stream_graph_updates(user_input)
+    try:
+        stream_graph_updates(user_input)
+    except KeyboardInterrupt:
+        human_response = input("Graph interrupted. Please provide input to resume: ")
+        human_command = Command(resume={"data": human_response})
+        stream_graph_updates(human_command)
+
     #except:
         # fallback if input() is nvailable
         #print("error in user_input:", e)
